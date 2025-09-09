@@ -1,8 +1,16 @@
+"use client"
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const bills = [
     { invoice: "INV-2023-010", date: "2023-10-01", amount: "Rs 2,500", status: "Paid" },
@@ -11,6 +19,9 @@ const bills = [
 ];
 
 export default function TenantBillsPage() {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'Paid': return 'default';
@@ -18,6 +29,14 @@ export default function TenantBillsPage() {
       default: return 'outline';
     }
   };
+
+  const handleSubmit = () => {
+    toast({
+        title: "Proof Submitted!",
+        description: "Your payment proof has been submitted for verification.",
+    });
+    setOpen(false);
+  }
 
   return (
     <>
@@ -84,7 +103,43 @@ export default function TenantBillsPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full">Pay Now</Button>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">Pay Now</Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[480px]">
+                        <DialogHeader>
+                          <DialogTitle>Submit Payment Proof</DialogTitle>
+                          <p className="text-sm text-muted-foreground pt-2">
+                            Pay via PhonePe/GPay to UPI ID: <strong className="text-foreground">society-upi@bank</strong>. Then, upload the payment screenshot below.
+                          </p>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input id="name" defaultValue="Mr. Raj (Tenant)" disabled />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="flat">Flat No.</Label>
+                            <Input id="flat" defaultValue="A-101" disabled />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="paymentFor">Payment For</Label>
+                            <Input id="paymentFor" defaultValue="Maintenance Charges - Q2 2024" disabled />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="screenshot">Upload Payment Screenshot</Label>
+                            <Input id="screenshot" type="file" />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" className="w-full" onClick={handleSubmit}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Submit for Verification
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                 </CardFooter>
             </Card>
         </div>
