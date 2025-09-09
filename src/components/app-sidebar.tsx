@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings } from "lucide-react";
+import * as icons from "lucide-react";
 import type { NavItem } from "@/lib/nav-items";
 import { AsrayaLogo } from "./icons";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
           <SidebarContent className="p-4">
             <SidebarMenu>
               {navItems.map((item) => {
+                const Icon = icons[item.icon] as icons.LucideIcon;
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -55,7 +57,7 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
                       className={cn(isActive && "bg-primary/10 text-primary hover:bg-primary/20")}
                     >
                       <Link href={item.href}>
-                        <item.icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5" />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
