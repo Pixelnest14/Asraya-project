@@ -11,7 +11,7 @@ export function PageHeader({ title, description, children, className }: PageHead
   return (
     <div className={cn("flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6", className)}>
       <div className="grid gap-1">
-        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight text-primary">{title}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight">{title}</h1>
         {description && <p className="text-muted-foreground">{description}</p>}
       </div>
       {children && <div className="flex-shrink-0">{children}</div>}

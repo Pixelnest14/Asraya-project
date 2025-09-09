@@ -4,6 +4,7 @@ export type NavItem = {
   label: string;
   href: string;
   icon: keyof typeof import("lucide-react");
+  subItems?: NavItem[];
 };
 
 export const adminNavItems: NavItem[] = [
@@ -14,13 +15,13 @@ export const adminNavItems: NavItem[] = [
   { label: "Billings", href: "/admin/billing", icon: "CreditCard" },
   { label: "Parking", href: "/admin/parking", icon: "ParkingCircle" },
   { label: "Notice Board", href: "/admin/notice-board", icon: "Megaphone" },
-  { label: "Resident Chat", href: "/admin/resident-chat", icon: "MessageSquare" },
+  { label: "Chat", href: "/admin/resident-chat", icon: "MessageSquare" },
   { label: "Voting", href: "/admin/voting", icon: "Vote" },
-  { label: "Emergency Alert", href: "/admin/emergency-alert", icon: "ShieldAlert" },
+  { label: "Emergency Alerts", href: "/admin/emergency-alert", icon: "Siren" },
   { label: "Marketplace", href: "/admin/marketplace", icon: "ShoppingCart" },
-  { label: "Smart Water", href: "/admin/smart-home/water", icon: "Droplets" },
-  { label: "Smart Lights", href: "/admin/smart-home/lights", icon: "Lightbulb" },
-  { label: "Smart Parking", href: "/admin/smart-home/parking", icon: "Car" },
+  { label: "Water Meter", href: "/admin/smart-home/water", icon: "Droplets" },
+  { label: "Light Control", href: "/admin/smart-home/lights", icon: "Lightbulb" },
+  { label: "Parking System", href: "/admin/smart-home/parking", icon: "Car" },
 ];
 
 export const tenantNavItems: NavItem[] = [

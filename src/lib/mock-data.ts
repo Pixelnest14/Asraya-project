@@ -6,11 +6,11 @@ export const dashboardStats = {
 };
 
 export const apartments = [
-  { id: 'A-101', block: 'A', status: 'Rented', owner: 'Ravi Kumar', tenant: 'Priya Sharma' },
-  { id: 'A-102', block: 'A', status: 'Self-occupied', owner: 'Sunita Singh', tenant: '' },
-  { id: 'B-201', block: 'B', status: 'Vacant', owner: 'Anil Mehta', tenant: '' },
-  { id: 'B-202', block: 'B', status: 'Rented', owner: 'Deepak Verma', tenant: 'John Doe' },
-  { id: 'C-301', block: 'C', status: 'Self-occupied', owner: 'Meera Reddy', tenant: '' },
+  { id: 'A-101', block: 'A', status: 'Rented', owner: 'Mr. Kumar', tenant: 'Mr. Raj' },
+  { id: 'A-102', block: 'A', status: 'Self-occupied', owner: 'Mrs. Devi', tenant: 'N/A' },
+  { id: 'B-201', block: 'B', status: 'Vacant', owner: 'Mr. Singh', tenant: 'N/A' },
+  { id: 'B-202', block: 'B', status: 'Rented', owner: 'Ms. Iyer', tenant: 'Ms. Priya' },
+  { id: 'C-301', block: 'C', status: 'Self-occupied', owner: 'Mr. Khan', tenant: 'N/A' },
   { id: 'C-302', block: 'C', status: 'Rented', owner: 'Vijay Patil', tenant: 'Jane Smith' },
   { id: 'A-201', block: 'A', status: 'Vacant', owner: 'Suresh Iyer', tenant: '' },
   { id: 'B-101', block: 'B', status: 'Self-occupied', owner: 'Fatima Khan', tenant: '' },

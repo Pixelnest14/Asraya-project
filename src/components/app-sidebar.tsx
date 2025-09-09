@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,10 +14,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings } from "lucide-react";
+import { Bell, LogOut, Settings } from "lucide-react";
 import * as icons from "lucide-react";
 import type { NavItem } from "@/lib/nav-items";
 import { AsrayaLogo } from "./icons";
@@ -31,6 +34,9 @@ type AppSidebarProps = {
 export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
   const pathname = usePathname();
 
+  const smartHomeNavItems = navItems.filter(item => item.href.includes('smart-home'));
+  const mainNavItems = navItems.filter(item => !item.href.includes('smart-home'));
+
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full bg-background text-foreground">
@@ -44,9 +50,9 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
               </div>
             </div>
           </SidebarHeader>
-          <SidebarContent className="p-4">
+          <SidebarContent className="p-2">
             <SidebarMenu>
-              {navItems.map((item) => {
+              {mainNavItems.map((item) => {
                 const Icon = icons[item.icon] as icons.LucideIcon;
                 const isActive = pathname.startsWith(item.href);
                 return (
@@ -54,7 +60,6 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
-                      className={cn(isActive && "bg-primary/10 text-primary hover:bg-primary/20")}
                     >
                       <Link href={item.href}>
                         <Icon className="h-5 w-5" />
@@ -65,6 +70,28 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
                 );
               })}
             </SidebarMenu>
+            <SidebarGroup>
+                <SidebarGroupLabel>Smart Home</SidebarGroupLabel>
+                {smartHomeNavItems.map((item) => {
+                const Icon = icons[item.icon] as icons.LucideIcon;
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Link href={item.href}>
+                        <Icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarGroup>
           </SidebarContent>
           <SidebarFooter className="p-4">
              <Button variant="ghost" className="w-full justify-start gap-2" asChild>
@@ -80,8 +107,8 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
             <SidebarTrigger className="sm:hidden" />
             <div className="flex items-center gap-4 ml-auto">
                 <Button variant="ghost" size="icon">
-                    <Settings className="h-5 w-5"/>
-                    <span className="sr-only">Settings</span>
+                    <Bell className="h-5 w-5"/>
+                    <span className="sr-only">Notifications</span>
                 </Button>
                 <Avatar className="h-9 w-9">
                     <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
