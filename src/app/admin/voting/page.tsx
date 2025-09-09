@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -83,9 +84,9 @@ export default function AdminVotingPage() {
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h4 className="font-semibold font-headline">{poll.title}</h4>
-                                        <p className="text-sm">
+                                        <div className="text-sm">
                                             Status: <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
-                                        </p>
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button 
