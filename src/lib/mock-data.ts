@@ -12,6 +12,9 @@ export const apartments = [
   { id: 'B-202', block: 'B', status: 'Rented', owner: 'Deepak Verma', tenant: 'John Doe' },
   { id: 'C-301', block: 'C', status: 'Self-occupied', owner: 'Meera Reddy', tenant: '' },
   { id: 'C-302', block: 'C', status: 'Rented', owner: 'Vijay Patil', tenant: 'Jane Smith' },
+  { id: 'A-201', block: 'A', status: 'Vacant', owner: 'Suresh Iyer', tenant: '' },
+  { id: 'B-101', block: 'B', status: 'Self-occupied', owner: 'Fatima Khan', tenant: '' },
+  { id: 'C-401', block: 'C', status: 'Rented', owner: 'Gaurav Gupta', tenant: 'Michael Brown' },
 ];
 
 export const recentComplaints = [
