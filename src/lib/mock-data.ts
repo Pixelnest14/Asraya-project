@@ -73,17 +73,33 @@ export const marketplaceItems = [
 export const polls = [
     {
         id: 1,
-        title: "Repainting of Building Exteriors",
-        status: "Active",
-        options: ["Yes, proceed with repainting", "No, postpone to next year"],
-        results: [68, 32],
+        title: "Should we install new playground equipment?",
+        status: "Closed",
+        options: ["Yes", "No"],
+        results: [78, 22],
     },
     {
         id: 2,
-        title: "Installation of Solar Panels",
+        title: "Preferred timing for the Annual Summer Festival?",
+        status: "Active",
+        options: ["Morning", "Evening", "Night"],
+        results: [45, 35, 20],
+    }
+];
+export const initialPolls = [
+    {
+        id: 1,
+        title: "Should we install new playground equipment?",
         status: "Closed",
-        options: ["Approve Budget", "Reject Budget"],
-        results: [85, 15],
+        options: ["Yes", "No"],
+        results: [78, 22],
+    },
+    {
+        id: 2,
+        title: "Preferred timing for the Annual Summer Festival?",
+        status: "Active",
+        options: ["Morning", "Evening", "Night"],
+        results: [45, 35, 20],
     }
 ];
 
