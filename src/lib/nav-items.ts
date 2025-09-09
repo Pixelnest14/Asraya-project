@@ -38,6 +38,16 @@ export const tenantNavItems: NavItem[] = [
 ];
 
 export const ownerNavItems: NavItem[] = [
-  ...tenantNavItems.map(item => ({...item, href: item.href.replace('/tenant/', '/owner/')})),
+  { label: "Dashboard", href: "/owner/dashboard", icon: "LayoutDashboard" },
+  { label: "My Bills", href: "/owner/bills", icon: "CreditCard" },
+  { label: "Complaints", href: "/owner/complaints", icon: "Wrench" },
+  { label: "Community", href: "/owner/community", icon: "Users" },
+  { label: "Book Amenities", href: "/owner/amenities", icon: "CalendarDays" },
+  { label: "My Vehicles", href: "/owner/vehicles", icon: "Car" },
+  { label: "Voting", href: "/owner/voting", icon: "Vote" },
+  { label: "Marketplace", href: "/owner/marketplace", icon: "ShoppingCart" },
+  { label: "Emergency", href: "/owner/emergency-alert", icon: "ShieldAlert" },
+  { label: "AI Assistant", href: "/owner/chatbot", icon: "Bot" },
+  { label: "Smart Home", href: "/owner/smart-home", icon: "Home" },
   { label: "My Tenants", href: "/owner/my-tenants", icon: "UserCheck" },
 ];
