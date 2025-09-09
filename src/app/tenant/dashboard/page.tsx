@@ -9,7 +9,7 @@ export default function TenantDashboard() {
     <>
       <PageHeader title="My Dashboard" description="Your personalized summary of society life." />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Outstanding Dues" value="₹2,500" icon={CreditCard} description="Due by 30th Nov" />
+        <StatCard title="Outstanding Dues" value="Rs 2,500" icon={CreditCard} description="Due by 30th Nov" />
         <StatCard title="Active Complaints" value="1" icon={Wrench} description="Plumbing issue" />
         <StatCard title="Packages" value="2" icon={Package} description="Ready for pickup" />
         <StatCard title="Security" value="All Clear" icon={Shield} description="No active alerts" />

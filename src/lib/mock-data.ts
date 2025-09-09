@@ -64,10 +64,10 @@ export const parkingSlots = [
 
 
 export const marketplaceItems = [
-  { id: 1, title: 'Used Bicycle', description: 'In good condition, selling because upgrading.', price: '₹3,000', seller: 'Priya (A-101)', image: 'https://picsum.photos/600/400?random=1', dataAiHint: "bicycle bike" },
-  { id: 2, title: 'Sofa Set for Rent', description: 'Comfortable 3-seater sofa, available for monthly rent.', price: '₹1,500/month', seller: 'Anil (B-201)', image: 'https://picsum.photos/600/400?random=2', dataAiHint: "sofa couch" },
-  { id: 3, title: 'Microwave Oven', description: '2-year-old microwave, works perfectly.', price: '₹2,500', seller: 'John (B-202)', image: 'https://picsum.photos/600/400?random=3', dataAiHint: "microwave oven" },
-  { id: 4, title: 'Study Table', description: 'Wooden study table with chair.', price: '₹4,000', seller: 'Meera (C-301)', image: 'https://picsum.photos/600/400?random=4', dataAiHint: "study table" },
+  { id: 1, title: 'Used Bicycle', description: 'In good condition, selling because upgrading.', price: 'Rs 3,000', seller: 'Priya (A-101)', image: 'https://picsum.photos/600/400?random=1', dataAiHint: "bicycle bike" },
+  { id: 2, title: 'Sofa Set for Rent', description: 'Comfortable 3-seater sofa, available for monthly rent.', price: 'Rs 1,500/month', seller: 'Anil (B-201)', image: 'https://picsum.photos/600/400?random=2', dataAiHint: "sofa couch" },
+  { id: 3, title: 'Microwave Oven', description: '2-year-old microwave, works perfectly.', price: 'Rs 2,500', seller: 'John (B-202)', image: 'https://picsum.photos/600/400?random=3', dataAiHint: "microwave oven" },
+  { id: 4, title: 'Study Table', description: 'Wooden study table with chair.', price: 'Rs 4,000', seller: 'Meera (C-301)', image: 'https://picsum.photos/600/400?random=4', dataAiHint: "study table" },
 ];
 
 export const polls = [
