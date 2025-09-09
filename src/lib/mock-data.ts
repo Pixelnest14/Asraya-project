@@ -87,6 +87,12 @@ export const polls = [
     }
 ];
 
+export const publishedNotices = [
+    { id: 1, title: "Quarterly Maintenance Drive", date: "July 10, 2024" },
+    { id: 2, title: "Pool Area Closed for Cleaning", date: "July 5, 2024" },
+    { id: 3, title: "Annual General Meeting", date: "June 20, 2024" },
+];
+
 export const tenantComplaints = [
     { id: 'TC001', category: 'Plumbing', date: '2023-10-20', description: 'Leaky faucet in the kitchen sink.', status: 'Resolved' },
     { id: 'TC002', category: 'Internet', date: '2023-10-22', description: 'Frequent disconnections from the society Wi-Fi.', status: 'In Progress' },
