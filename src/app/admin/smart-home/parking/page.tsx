@@ -35,21 +35,6 @@ export default function SmartParkingPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                           <Video className="h-6 w-6" /> Live Camera Feed
-                        </CardTitle>
-                        <CardDescription>
-                            Real-time video from the main gate camera.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                            <p className="text-muted-foreground">Camera Feed Unavailable</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
                            <Car className="h-6 w-6" /> Occupancy Status
                         </CardTitle>
                         <CardDescription>
