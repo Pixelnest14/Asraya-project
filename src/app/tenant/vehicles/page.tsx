@@ -9,11 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Trash2 } from "lucide-react";
-
-const vehicles = [
-    { number: "MH 12 AB 1234", type: "Car" },
-    { number: "MH 12 CD 5678", type: "Motorcycle" },
-];
+import { vehicles } from "@/lib/mock-data";
 
 export default function VehiclesPage() {
   return (
@@ -43,7 +39,7 @@ export default function VehiclesPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="vehicle-number">Vehicle Number</Label>
-                    <Input id="vehicle-number" placeholder="e.g., MH14AB1234" />
+                    <Input id="vehicle-number" placeholder="e.g., KA14AB1234" />
                 </div>
                 <Button>
                     <Car className="mr-2 h-4 w-4" />
