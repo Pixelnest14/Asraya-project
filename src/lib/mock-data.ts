@@ -1,3 +1,4 @@
+
 export const dashboardStats = {
   totalApartments: 120,
   residentCount: 350,
@@ -51,9 +52,10 @@ export const billings = [
 ];
 
 export const parkingSlots = Array.from({ length: 40 }, (_, i) => ({
-  id: `P${i + 1}`,
-  status: i % 5 === 0 ? 'available' : i % 3 === 0 ? 'occupied' : 'allotted',
+  id: `P${String(i + 1).padStart(2, '0')}`,
+  status: i % 5 === 0 ? 'Available' : i % 3 === 0 ? 'Occupied' : 'Allotted',
   allottedTo: i % 5 !== 0 && i % 3 !== 0 ? `A-${101 + i}` : null,
+  vehicle: i % 3 === 0 ? 'DL-3C-1234' : null,
 }));
 
 
