@@ -1,8 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Lightbulb, Zap, Clock, Sun, Moon } from "lucide-react";
+import { Lightbulb, Clock, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 export default function SmartLightsPage() {
@@ -21,17 +20,7 @@ export default function SmartLightsPage() {
                 title="Smart Light Control"
                 description="Remotely control and adjust the brightness of lights in common areas."
             />
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Energy Consumption</CardTitle>
-                        <Zap className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">45 kWh</div>
-                        <p className="text-xs text-muted-foreground">Used today</p>
-                    </CardContent>
-                </Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Lights Active</CardTitle>
