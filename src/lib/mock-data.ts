@@ -51,12 +51,16 @@ export const billings = [
     { flat: "C-302", block: "C", status: "Paid" },
 ];
 
-export const parkingSlots = Array.from({ length: 40 }, (_, i) => ({
-  id: `P${String(i + 1).padStart(2, '0')}`,
-  status: i % 5 === 0 ? 'Available' : i % 3 === 0 ? 'Occupied' : 'Allotted',
-  allottedTo: i % 5 !== 0 && i % 3 !== 0 ? `A-${101 + i}` : null,
-  vehicle: i % 3 === 0 ? 'DL-3C-1234' : null,
-}));
+export const parkingSlots = [
+  { id: 'A1', status: 'Occupied', allottedTo: 'A-101' },
+  { id: 'A2', status: 'Allotted', allottedTo: 'A-102' },
+  { id: 'A3', status: 'Available', allottedTo: null },
+  { id: 'B1', status: 'Occupied', allottedTo: 'B-201' },
+  { id: 'B2', status: 'Available', allottedTo: null },
+  { id: 'B3', status: 'Occupied', allottedTo: 'B-202' },
+  { id: 'C1', status: 'Allotted', allottedTo: 'C-301' },
+  { id: 'C2', status: 'Available', allottedTo: null },
+];
 
 
 export const marketplaceItems = [
