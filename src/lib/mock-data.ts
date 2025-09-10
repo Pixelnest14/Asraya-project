@@ -120,6 +120,11 @@ export const myTenants = [
     { name: "Suresh Gupta", status: "Inactive", property: "D-405" },
 ];
 
+export const tenantRentStatus = [
+  { tenant: "Priya Sharma", property: "A-101", status: "Paid" },
+  { tenant: "John Doe", property: "B-202", status: "Pending" },
+];
+
 export const vehicles = [
     { number: "KA 12 AB 1234", type: "Car" },
     { number: "KA 12 CD 5678", type: "Motorcycle" },

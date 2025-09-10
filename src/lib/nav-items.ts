@@ -40,7 +40,7 @@ export const tenantNavItems: NavItem[] = [
 
 export const ownerNavItems: NavItem[] = [
   { label: "Dashboard", href: "/owner/dashboard", icon: "LayoutDashboard" },
-  { label: "My Bills", href: "/owner/bills", icon: "CreditCard" },
+  { label: "Billings", href: "/owner/bills", icon: "CreditCard" },
   { label: "Complaints", href: "/owner/complaints", icon: "Wrench" },
   { label: "Community", href: "/owner/community", icon: "Users" },
   { label: "Book Amenities", href: "/owner/amenities", icon: "CalendarDays" },
