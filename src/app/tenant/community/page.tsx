@@ -6,10 +6,11 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, onSnapshot, getDocs, addDoc, Timestamp, doc, setDoc, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { initialEvents } from "@/lib/mock-data";
 
 type CommunityEvent = {
     id: string;
@@ -26,46 +27,62 @@ type Announcement = {
 };
 
 export default function CommunityPage() {
+    const { db } = useFirebase();
     const { toast } = useToast();
     const [events, setEvents] = useState<CommunityEvent[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch events
-                const eventsSnapshot = await getDocs(collection(db, "events"));
-                const eventsList = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityEvent));
-                setEvents(eventsList);
+        if (!db) return;
 
-                // Fetch announcements
-                const announcementsSnapshot = await getDocs(collection(db, "notices"));
-                const announcementsList = announcementsSnapshot.docs.map(doc => {
+        const setupAndFetchData = async () => {
+            setIsLoading(true);
+
+            // Set up events
+            try {
+                const eventsCollection = collection(db, "events");
+                const eventsSnapshot = await getDocs(eventsCollection);
+                if (eventsSnapshot.empty) {
+                    for (const event of initialEvents) {
+                        await addDoc(eventsCollection, event);
+                    }
+                }
+            } catch (error) {
+                console.error("Error setting up initial events:", error);
+            }
+            
+            const eventsQuery = query(collection(db, "events"), orderBy("date", "desc"));
+            const unsubEvents = onSnapshot(eventsQuery, (snapshot) => {
+                setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityEvent)));
+            });
+
+            // Set up announcements (notices)
+            const noticesQuery = query(collection(db, "notices"), orderBy("createdAt", "desc"));
+            const unsubAnnouncements = onSnapshot(noticesQuery, (snapshot) => {
+                const announcementsList = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
                         id: doc.id,
                         title: data.title,
                         content: data.content,
-                        date: (data.date as Timestamp).toDate().toLocaleDateString(),
+                        date: (data.createdAt as Timestamp).toDate().toLocaleDateString(),
                     };
                 });
                 setAnnouncements(announcementsList);
+            });
+            
+            setIsLoading(false);
 
-            } catch (error) {
-                console.error("Error fetching community data:", error);
-                toast({
-                    title: "Error",
-                    description: "Could not load community data from the database.",
-                    variant: "destructive",
-                });
-            } finally {
-                setIsLoading(false);
-            }
+            return () => {
+                unsubEvents();
+                unsubAnnouncements();
+            };
         };
-        fetchData();
-    }, [toast]);
+        
+        setupAndFetchData();
+
+    }, [db, toast]);
 
 
   return (

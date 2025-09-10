@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { apartments } from "@/lib/mock-data";
+import { apartments as initialApartments } from "@/lib/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,61 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, onSnapshot, getDocs, setDoc, doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type Apartment = {
+  id: string;
+  block: string;
+  status: 'Rented' | 'Self-occupied' | 'Vacant';
+  owner: string;
+  tenant: string | null;
+};
 
 export default function ApartmentsPage() {
+  const { db } = useFirebase();
+  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [blockFilter, setBlockFilter] = useState("all");
+
+  useEffect(() => {
+    if (!db) return;
+
+    const setupAndFetchApartments = async () => {
+        setIsLoading(true);
+        const apartmentsCollection = collection(db, "apartments");
+        
+        try {
+            const snapshot = await getDocs(apartmentsCollection);
+            if (snapshot.empty) {
+                // Pre-fill database with mock data if it's empty
+                for (const apt of initialApartments) {
+                    await setDoc(doc(db, "apartments", apt.id), apt);
+                }
+            }
+        } catch (error) {
+            console.error("Error setting up initial apartments:", error);
+        }
+
+        const unsubscribe = onSnapshot(apartmentsCollection, (snapshot) => {
+            const apartmentsData = snapshot.docs.map(doc => doc.data() as Apartment);
+            setApartments(apartmentsData);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching apartments:", error);
+            setIsLoading(false);
+        });
+
+        return unsubscribe;
+    };
+    
+    const unsubscribePromise = setupAndFetchApartments();
+    return () => {
+        unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
+    };
+  }, [db]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -76,16 +127,27 @@ export default function ApartmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredApartments.map((apartment) => (
-                <TableRow key={apartment.id}>
-                  <TableCell className="font-medium">{apartment.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(apartment.status)}>{apartment.status}</Badge>
-                  </TableCell>
-                  <TableCell>{apartment.owner}</TableCell>
-                  <TableCell>{apartment.tenant || 'N/A'}</TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                filteredApartments.map((apartment) => (
+                  <TableRow key={apartment.id}>
+                    <TableCell className="font-medium">{apartment.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(apartment.status)}>{apartment.status}</Badge>
+                    </TableCell>
+                    <TableCell>{apartment.owner}</TableCell>
+                    <TableCell>{apartment.tenant || 'N/A'}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

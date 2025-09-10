@@ -6,11 +6,11 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Calendar as CalendarIcon, LoaderCircle } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, setDoc, doc } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,30 +22,26 @@ type Amenity = {
   description: string;
 };
 
-const amenitiesData: Amenity[] = [
+const amenitiesData: Omit<Amenity, 'id'>[] = [
   {
-    id: "1",
     name: "Swimming Pool",
     image: "https://picsum.photos/seed/pool/600/400",
     dataAiHint: "swimming pool",
     description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
   },
   {
-    id: "2",
     name: "Party Hall",
     image: "https://picsum.photos/seed/party/600/400",
     dataAiHint: "party hall",
     description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
   },
   {
-    id: "3",
     name: "Badminton Court",
     image: "https://picsum.photos/seed/badminton/600/400",
     dataAiHint: "badminton court",
     description: "A well-maintained indoor badminton court. Rackets and shuttles available."
   },
   {
-    id: "4",
     name: "Gym",
     image: "https://picsum.photos/seed/gym/600/400",
     dataAiHint: "gym equipment",
@@ -61,17 +57,34 @@ export default function AmenitiesPage() {
   const [selectedAmenity, setSelectedAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
-  const { db } = useFirebase();
+  const { db, user } = useFirebase();
 
   useEffect(() => {
+    if (!db) return;
     const fetchAmenities = async () => {
       setIsLoading(true);
-      // Using mock data instead of Firestore for now
-      setAmenities(amenitiesData);
+      const amenitiesCollection = collection(db, "amenities");
+      try {
+        const snapshot = await getDocs(amenitiesCollection);
+        if (snapshot.empty) {
+          for (const amenity of amenitiesData) {
+            const docRef = doc(amenitiesCollection);
+            await setDoc(docRef, { ...amenity, id: docRef.id });
+          }
+           const newSnapshot = await getDocs(amenitiesCollection);
+           const amenitiesList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+           setAmenities(amenitiesList);
+        } else {
+            const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+            setAmenities(amenitiesList);
+        }
+      } catch (error) {
+          console.error("Error fetching amenities:", error);
+      }
       setIsLoading(false);
     };
     fetchAmenities();
-  }, []);
+  }, [db]);
 
 
   const handleBooking = (amenity: Amenity) => {
@@ -85,10 +98,9 @@ export default function AmenitiesPage() {
       return;
     }
     
-    if (!db) {
+    if (!db || !user) {
       toast({
-        title: "Database not available",
-        description: "Please try again later.",
+        title: "Please log in to book an amenity",
         variant: "destructive"
       });
       return;
@@ -100,8 +112,8 @@ export default function AmenitiesPage() {
         amenityName: selectedAmenity.name,
         bookingDate: Timestamp.fromDate(selectedDate),
         status: "Confirmed",
-        userName: "Guest",
-        userFlat: "N/A"
+        userId: user.uid,
+        userFlat: "A-101" // Example data
       });
 
       toast({
