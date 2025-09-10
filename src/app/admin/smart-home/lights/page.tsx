@@ -8,7 +8,7 @@ import { Lightbulb, Clock, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, doc, onSnapshot, updateDoc, setDoc, getDocs } from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -36,24 +36,26 @@ export default function SmartLightsPage() {
 
     useEffect(() => {
         if (!db) return;
-        setIsLoading(true);
-
+        
         const lightZonesCollection = collection(db, "lightZones");
+
+        const setupInitialZones = async () => {
+            for (const zoneData of initialLightZones) {
+                const zoneId = zoneData.name.replace(/\s+/g, '-').toLowerCase();
+                const docRef = doc(db, "lightZones", zoneId);
+                const docSnap = await getDoc(docRef);
+                if (!docSnap.exists()) {
+                    await setDoc(docRef, zoneData);
+                }
+            }
+        };
+
+        setupInitialZones();
 
         const unsubscribe = onSnapshot(lightZonesCollection, 
             (snapshot) => {
-                if (snapshot.empty) {
-                    // Pre-populate if collection is empty
-                    const batch = [];
-                    for (const zoneData of initialLightZones) {
-                        const docRef = doc(lightZonesCollection, zoneData.name.replace(/\s+/g, '-').toLowerCase());
-                        batch.push(setDoc(docRef, zoneData));
-                    }
-                    Promise.all(batch);
-                } else {
-                    const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
-                    setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
-                }
+                const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
+                setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
                 setIsLoading(false);
             },
             (error) => {
