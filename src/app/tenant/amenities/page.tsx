@@ -10,7 +10,6 @@ import { Calendar as CalendarIcon, LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +61,7 @@ export default function AmenitiesPage() {
   const [selectedAmenity, setSelectedAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
-  const { user, isLoading: isAuthLoading } = useFirebase();
+  const { db } = useFirebase();
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -86,13 +85,22 @@ export default function AmenitiesPage() {
       return;
     }
     
+    if (!db) {
+      toast({
+        title: "Database not available",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       await addDoc(collection(db, "bookings"), {
         amenityId: selectedAmenity.id,
         amenityName: selectedAmenity.name,
         bookingDate: Timestamp.fromDate(selectedDate),
         status: "Confirmed",
-        userName: "Guest", // Default to guest since login is not required
+        userName: "Guest",
         userFlat: "N/A"
       });
 
