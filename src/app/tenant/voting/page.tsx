@@ -1,8 +1,8 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { polls } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,110 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type PollOption = {
+  text: string;
+  votes: number;
+};
+
+type Poll = {
+  id: string;
+  question: string;
+  status: 'Active' | 'Closed';
+  options: PollOption[];
+  totalVotes: number;
+};
 
 export default function TenantVotingPage() {
     const { toast } = useToast();
-    const [votedPolls, setVotedPolls] = useState<number[]>([]);
+    const { db, user, isLoading: isAuthLoading } = useFirebase();
 
-    const handleVote = (pollId: number) => {
-        setVotedPolls([...votedPolls, pollId]);
-        toast({
-            title: "Vote Cast!",
-            description: "Thank you for your participation.",
+    const [polls, setPolls] = useState<Poll[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+    const [votedPolls, setVotedPolls] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!db) return;
+        setIsLoading(true);
+        const unsubscribe = onSnapshot(collection(db, "polls"), (snapshot) => {
+            const pollsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+            setPolls(pollsData);
+            setIsLoading(false);
         });
+        return () => unsubscribe();
+    }, [db]);
+
+    useEffect(() => {
+        if (!user || polls.length === 0) return;
+
+        const checkIfVoted = async () => {
+            if (!db) return;
+            const newVotedPolls: string[] = [];
+            for (const poll of polls) {
+                const voteDocRef = doc(db, "polls", poll.id, "votes", user.uid);
+                const voteDoc = await getDoc(voteDocRef);
+                if (voteDoc.exists()) {
+                    newVotedPolls.push(poll.id);
+                }
+            }
+            setVotedPolls(newVotedPolls);
+        };
+        checkIfVoted();
+    }, [user, polls, db]);
+
+    const handleVote = async (pollId: string) => {
+        if (!user) {
+            toast({ title: "Please log in to vote.", variant: "destructive" });
+            return;
+        }
+        if (!db) {
+            toast({ title: "Database not available.", variant: "destructive" });
+            return;
+        }
+
+        const selectedOption = selectedOptions[pollId];
+        if (!selectedOption) {
+            toast({ title: "Please select an option to vote.", variant: "destructive" });
+            return;
+        }
+
+        const pollRef = doc(db, "polls", pollId);
+        const voteRef = doc(pollRef, "votes", user.uid);
+
+        try {
+            // Record the user's vote to prevent re-voting
+            await setDoc(voteRef, { option: selectedOption });
+
+            const poll = polls.find(p => p.id === pollId);
+            if(poll) {
+                const optionIndex = poll.options.findIndex(opt => opt.text === selectedOption);
+                if(optionIndex > -1) {
+                    // This is a "hacky" way to update an array element in Firestore
+                    // A better way would be a cloud function to handle this transactionally
+                    // For this prototype, this is acceptable.
+                    const newOptions = [...poll.options];
+                    newOptions[optionIndex].votes = (newOptions[optionIndex].votes || 0) + 1;
+                    
+                    await updateDoc(pollRef, {
+                        totalVotes: increment(1),
+                        options: newOptions
+                    });
+                }
+            }
+
+            toast({
+                title: "Vote Cast!",
+                description: "Thank you for your participation.",
+            });
+            setVotedPolls([...votedPolls, pollId]);
+        } catch (error) {
+            console.error("Error casting vote: ", error);
+            toast({ title: "Error casting vote", variant: "destructive" });
+        }
     };
     
     return (
@@ -29,51 +122,67 @@ export default function TenantVotingPage() {
                 title="Community Voting"
                 description="Participate in community polls and make your voice heard."
             />
-            <div className="grid gap-6 md:grid-cols-2">
-                {polls.map((poll) => (
-                    <Card key={poll.id}>
-                        <CardHeader>
-                            <div className="flex justify-between items-start">
-                                <CardTitle className="font-headline">{poll.title}</CardTitle>
-                                <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {poll.status === 'Active' && !votedPolls.includes(poll.id) ? (
-                                <RadioGroup defaultValue="option-one" className="space-y-2">
-                                    {poll.options.map((option, index) => (
-                                         <div key={index} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={option} id={`r${poll.id}-${index}`} />
-                                            <Label htmlFor={`r${poll.id}-${index}`}>{option}</Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
-                            ) : (
-                                poll.options.map((option, index) => (
-                                    <div key={index} className="space-y-2">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span>{option}</span>
-                                            <span className="font-medium">{poll.results[index]}%</span>
-                                        </div>
-                                        <Progress value={poll.results[index]} />
+            {isLoading ? (
+                 <div className="grid gap-6 md:grid-cols-2">
+                    {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
+                 </div>
+            ) : (
+                <div className="grid gap-6 md:grid-cols-2">
+                    {polls.map((poll) => {
+                        const hasVoted = votedPolls.includes(poll.id);
+                        return (
+                            <Card key={poll.id}>
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <CardTitle className="font-headline">{poll.question}</CardTitle>
+                                        <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
                                     </div>
-                                ))
-                            )}
-                        </CardContent>
-                        <CardFooter>
-                            {poll.status === 'Active' && !votedPolls.includes(poll.id) && (
-                                <Button className="w-full" onClick={() => handleVote(poll.id)}>Submit Vote</Button>
-                            )}
-                             {poll.status === 'Active' && votedPolls.includes(poll.id) && (
-                                <p className="text-sm text-muted-foreground w-full text-center">You have already voted in this poll.</p>
-                            )}
-                             {poll.status === 'Closed' && (
-                                <p className="text-sm text-muted-foreground w-full text-center">This poll is closed.</p>
-                            )}
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {poll.status === 'Active' && !hasVoted ? (
+                                        <RadioGroup 
+                                            value={selectedOptions[poll.id]}
+                                            onValueChange={(value) => setSelectedOptions(prev => ({...prev, [poll.id]: value}))}
+                                            className="space-y-2"
+                                        >
+                                            {poll.options.map((option, index) => (
+                                                <div key={index} className="flex items-center space-x-2">
+                                                    <RadioGroupItem value={option.text} id={`r${poll.id}-${index}`} />
+                                                    <Label htmlFor={`r${poll.id}-${index}`}>{option.text}</Label>
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                    ) : (
+                                        poll.options.map((option, index) => {
+                                            const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+                                            return (
+                                                <div key={index} className="space-y-2">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span>{option.text}</span>
+                                                        <span className="font-medium">{percentage.toFixed(0)}% ({option.votes} votes)</span>
+                                                    </div>
+                                                    <Progress value={percentage} />
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    {poll.status === 'Active' && !hasVoted && (
+                                        <Button className="w-full" onClick={() => handleVote(poll.id)}>Submit Vote</Button>
+                                    )}
+                                    {poll.status === 'Active' && hasVoted && (
+                                        <p className="text-sm text-muted-foreground w-full text-center">You have already voted in this poll.</p>
+                                    )}
+                                    {poll.status === 'Closed' && (
+                                        <p className="text-sm text-muted-foreground w-full text-center">This poll is closed.</p>
+                                    )}
+                                </CardFooter>
+                            </Card>
+                        )
+                    })}
+                </div>
+            )}
         </>
     );
 }

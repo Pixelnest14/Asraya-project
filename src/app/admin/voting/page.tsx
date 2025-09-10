@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { initialPolls } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,21 +11,120 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, RefreshCw, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+
+type PollOption = {
+  text: string;
+  votes: number;
+};
+
+type Poll = {
+  id: string;
+  question: string;
+  status: 'Active' | 'Closed';
+  options: PollOption[];
+  totalVotes: number;
+};
 
 export default function AdminVotingPage() {
     const { toast } = useToast();
-    const [polls, setPolls] = useState(initialPolls);
+    const { db } = useFirebase();
 
-    const handleToggleStatus = (pollId: number) => {
-        setPolls(polls.map(p => 
-            p.id === pollId 
-            ? { ...p, status: p.status === 'Active' ? 'Closed' : 'Active' }
-            : p
-        ));
-        toast({
-            title: "Poll Status Updated!",
-            description: "The poll status has been successfully changed.",
+    const [polls, setPolls] = useState<Poll[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Form state
+    const [question, setQuestion] = useState("");
+    const [options, setOptions] = useState(["", ""]);
+
+    useEffect(() => {
+        if (!db) return;
+        setIsLoading(true);
+        const unsubscribe = onSnapshot(collection(db, "polls"), (snapshot) => {
+            const pollsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+            setPolls(pollsData);
+            setIsLoading(false);
         });
+        return () => unsubscribe();
+    }, [db]);
+
+    const handleOptionChange = (index: number, value: string) => {
+        const newOptions = [...options];
+        newOptions[index] = value;
+        setOptions(newOptions);
+    };
+
+    const addOption = () => {
+        if (options.length < 4) {
+            setOptions([...options, ""]);
+        }
+    };
+    
+    const removeOption = (index: number) => {
+        if (options.length > 2) {
+            const newOptions = [...options];
+            newOptions.splice(index, 1);
+            setOptions(newOptions);
+        }
+    };
+
+    const handleCreatePoll = async () => {
+        if (!db) return;
+        if (!question.trim()) {
+            toast({ title: "Please enter a poll question.", variant: "destructive" });
+            return;
+        }
+        const validOptions = options.map(o => o.trim()).filter(o => o !== "");
+        if (validOptions.length < 2) {
+            toast({ title: "Please provide at least two poll options.", variant: "destructive" });
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "polls"), {
+                question,
+                options: validOptions.map(opt => ({ text: opt, votes: 0 })),
+                status: "Active",
+                totalVotes: 0,
+                createdAt: Timestamp.now(),
+            });
+            toast({ title: "Poll Created!", description: "The new poll is now live." });
+            // Reset form
+            setQuestion("");
+            setOptions(["", ""]);
+        } catch (error) {
+            console.error("Error creating poll: ", error);
+            toast({ title: "Error", description: "Could not create the poll.", variant: "destructive" });
+        }
+    };
+
+    const handleToggleStatus = async (pollId: string, currentStatus: "Active" | "Closed") => {
+        if (!db) return;
+        const newStatus = currentStatus === 'Active' ? 'Closed' : 'Active';
+        try {
+            await updateDoc(doc(db, "polls", pollId), { status: newStatus });
+            toast({
+                title: "Poll Status Updated!",
+                description: `The poll has been ${newStatus.toLowerCase()}.`,
+            });
+        } catch (error) {
+            console.error("Error updating poll status: ", error);
+            toast({ title: "Error", description: "Could not update poll status.", variant: "destructive" });
+        }
+    };
+
+    const handleDeletePoll = async (pollId: string) => {
+        if (!db) return;
+        if (confirm("Are you sure you want to delete this poll? This action cannot be undone.")) {
+            try {
+                await deleteDoc(doc(db, "polls", pollId));
+                toast({ title: "Poll Deleted", variant: "destructive" });
+            } catch (error) {
+                console.error("Error deleting poll: ", error);
+                toast({ title: "Error", description: "Could not delete poll.", variant: "destructive" });
+            }
+        }
     };
     
     return (
@@ -45,27 +143,34 @@ export default function AdminVotingPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="question">Poll Question</Label>
-                            <Input id="question" placeholder="e.g., Should we change gym timings?" />
+                            <Input id="question" placeholder="e.g., Should we change gym timings?" value={question} onChange={e => setQuestion(e.target.value)} />
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="option1">Option 1</Label>
-                            <Input id="option1" placeholder="Required" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="option2">Option 2</Label>
-                            <Input id="option2" placeholder="Required" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="option3">Option 3</Label>
-                            <Input id="option3" placeholder="Optional" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="option4">Option 4</Label>
-                            <Input id="option4" placeholder="Optional" />
-                        </div>
+                        {options.map((option, index) => (
+                             <div key={index} className="space-y-2">
+                                <Label htmlFor={`option${index + 1}`}>Option {index + 1}</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input 
+                                        id={`option${index + 1}`} 
+                                        placeholder={index < 2 ? "Required" : "Optional"} 
+                                        value={option}
+                                        onChange={e => handleOptionChange(index, e.target.value)}
+                                    />
+                                    {index > 1 && (
+                                        <Button variant="ghost" size="icon" onClick={() => removeOption(index)}>
+                                            <XCircle className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {options.length < 4 && (
+                            <Button variant="outline" size="sm" onClick={addOption}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Option
+                            </Button>
+                        )}
                     </CardContent>
                     <CardFooter>
-                        <Button>
+                        <Button onClick={handleCreatePoll}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Create Poll
                         </Button>
@@ -79,11 +184,11 @@ export default function AdminVotingPage() {
                         <CardDescription>View and manage existing polls.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {polls.map((poll) => (
+                        {isLoading ? <p>Loading polls...</p> : polls.map((poll) => (
                             <div key={poll.id} className="p-4 rounded-lg border bg-muted/30">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <h4 className="font-semibold font-headline">{poll.title}</h4>
+                                        <h4 className="font-semibold font-headline">{poll.question}</h4>
                                         <div className="text-sm">
                                             Status: <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
                                         </div>
@@ -92,26 +197,30 @@ export default function AdminVotingPage() {
                                         <Button 
                                             variant="outline"
                                             size="sm" 
-                                            onClick={() => handleToggleStatus(poll.id)}
+                                            onClick={() => handleToggleStatus(poll.id, poll.status)}
+                                            className="gap-1"
                                         >
                                             {poll.status === 'Active' ? <XCircle /> : <RefreshCw />}
                                             {poll.status === 'Active' ? 'Close' : 'Re-open'}
                                         </Button>
-                                        <Button variant="destructive" size="icon">
+                                        <Button variant="destructive" size="icon" onClick={() => handleDeletePoll(poll.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    {poll.options.map((option, index) => (
-                                        <div key={index} className="space-y-1">
-                                            <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                                <span>{option}</span>
-                                                <span className="font-medium text-foreground">{poll.results[index]}%</span>
+                                    {poll.options.map((option, index) => {
+                                        const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+                                        return (
+                                            <div key={index} className="space-y-1">
+                                                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                                    <span>{option.text}</span>
+                                                    <span className="font-medium text-foreground">{percentage.toFixed(0)}% ({option.votes} votes)</span>
+                                                </div>
+                                                <Progress value={percentage} className="h-2" />
                                             </div>
-                                            <Progress value={poll.results[index]} className="h-2" />
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
                         ))}

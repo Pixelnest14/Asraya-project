@@ -70,39 +70,6 @@ export const marketplaceItems = [
   { id: 4, title: 'Study Table', description: 'Wooden study table with chair.', price: 'Rs 4,000', seller: 'Meera (C-301)', image: 'https://picsum.photos/600/400?random=4', dataAiHint: "study table" },
 ];
 
-export const polls = [
-    {
-        id: 1,
-        title: "Should we install new playground equipment?",
-        status: "Closed",
-        options: ["Yes", "No"],
-        results: [78, 22],
-    },
-    {
-        id: 2,
-        title: "Preferred timing for the Annual Summer Festival?",
-        status: "Active",
-        options: ["Morning", "Evening", "Night"],
-        results: [45, 35, 20],
-    }
-];
-export const initialPolls = [
-    {
-        id: 1,
-        title: "Should we install new playground equipment?",
-        status: "Closed",
-        options: ["Yes", "No"],
-        results: [78, 22],
-    },
-    {
-        id: 2,
-        title: "Preferred timing for the Annual Summer Festival?",
-        status: "Active",
-        options: ["Morning", "Evening", "Night"],
-        results: [45, 35, 20],
-    }
-];
-
 export const publishedNotices = [
     { id: 1, title: "Quarterly Maintenance Drive", date: "July 10, 2024" },
     { id: 2, title: "Pool Area Closed for Cleaning", date: "July 5, 2024" },
