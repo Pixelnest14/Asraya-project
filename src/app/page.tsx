@@ -26,8 +26,6 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // For demo purposes, we'll use a hardcoded email/password and role-based redirect.
-    // In a real app, you would have more robust role management.
     try {
       if (role === 'admin' && email !== 'admin@asraya.com') {
          throw new Error("Invalid admin credentials");
