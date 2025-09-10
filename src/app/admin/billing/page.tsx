@@ -19,6 +19,13 @@ type Billing = {
   status: 'Paid' | 'Pending Verification' | 'Due';
 };
 
+// A simple representation of all apartments in the society
+const allApartments = [
+    { flat: "A-101", block: "A" }, { flat: "A-102", block: "A" },
+    { flat: "B-201", block: "B" }, { flat: "B-202", block: "B" },
+    { flat: "C-301", block: "C" }, { flat: "C-302", block: "C" },
+];
+
 export default function BillingPage() {
   const { db } = useFirebase();
   const { toast } = useToast();
@@ -27,13 +34,6 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (!db) return;
-
-    // A simple representation of all apartments in the society
-    const allApartments = [
-        { flat: "A-101", block: "A" }, { flat: "A-102", block: "A" },
-        { flat: "B-201", block: "B" }, { flat: "B-202", block: "B" },
-        { flat: "C-301", block: "C" }, { flat: "C-302", block: "C" },
-    ];
 
     const unsubscribe = onSnapshot(collection(db, "bills"), (snapshot) => {
         // Create a map of flat -> bill status for quick lookups
@@ -77,9 +77,6 @@ export default function BillingPage() {
     }
 
     try {
-        // This creates or updates a bill document for the tenant.
-        // If the document already exists but has a different status (e.g. Paid),
-        // this action effectively re-issues the bill by setting it to 'Due'.
         const billRef = doc(db, "bills", flat);
         await setDoc(billRef, {
             flat: flat,
@@ -91,7 +88,7 @@ export default function BillingPage() {
 
         toast({
             title: "Reminder Sent!",
-            description: `A payment reminder has been sent to flat ${flat}.`,
+            description: `A payment reminder has been sent to flat ${flat}. The tenant will now see this bill.`,
         });
     } catch (error) {
         console.error("Error sending reminder:", error);
@@ -141,9 +138,9 @@ export default function BillingPage() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleSendReminder(billing.flat)}
-                      disabled={billing.status !== 'Due'}
+                      disabled={billing.status === 'Paid' || billing.status === 'Pending Verification'}
                     >
-                      Send Reminder
+                      {billing.status === 'Due' ? 'Resend Reminder' : 'Send Reminder'}
                     </Button>
                   </TableCell>
                 </TableRow>
