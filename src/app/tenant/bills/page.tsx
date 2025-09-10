@@ -28,6 +28,7 @@ export default function TenantBillsPage() {
   const [name, setName] = useState("Mr. Raj (Tenant)");
   const [flat, setFlat] = useState("A-101");
   const [paymentFor, setPaymentFor] = useState("Maintenance Charges - Q2 2024");
+  const [isBillPaid, setIsBillPaid] = useState(false);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -70,6 +71,7 @@ export default function TenantBillsPage() {
           description: "Your payment proof has been submitted for verification.",
       });
       setOpen(false);
+      setIsBillPaid(true);
 
     } catch (error) {
       console.error("Error submitting payment proof: ", error);
@@ -124,68 +126,70 @@ export default function TenantBillsPage() {
                 </CardContent>
             </Card>
         </div>
-        <div className="md:col-span-1">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Current Outstanding Bill</CardTitle>
-                    <CardDescription>Due by November 30, 2023</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex justify-between items-baseline">
-                        <span className="text-muted-foreground">Maintenance Fee:</span>
-                        <span className="font-bold">Rs 2,000</span>
-                    </div>
-                     <div className="flex justify-between items-baseline">
-                        <span className="text-muted-foreground">Sinking Fund:</span>
-                        <span className="font-bold">Rs 500</span>
-                    </div>
-                     <div className="border-t my-2"></div>
-                     <div className="flex justify-between items-baseline text-lg">
-                        <span className="font-semibold">Total Amount:</span>
-                        <span className="font-bold text-primary">Rs 2,500</span>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Dialog open={open} onOpenChange={setOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full">Pay Now</Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[480px]">
-                        <DialogHeader>
-                          <DialogTitle>Submit Payment Proof</DialogTitle>
-                          <p className="text-sm text-muted-foreground pt-2">
-                            Pay via PhonePe/GPay to UPI ID: <strong className="text-foreground">society-upi@bank</strong>. Then, upload the payment screenshot below.
-                          </p>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+        {!isBillPaid && (
+          <div className="md:col-span-1">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Current Outstanding Bill</CardTitle>
+                      <CardDescription>Due by November 30, 2023</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="flex justify-between items-baseline">
+                          <span className="text-muted-foreground">Maintenance Fee:</span>
+                          <span className="font-bold">Rs 2,000</span>
+                      </div>
+                      <div className="flex justify-between items-baseline">
+                          <span className="text-muted-foreground">Sinking Fund:</span>
+                          <span className="font-bold">Rs 500</span>
+                      </div>
+                      <div className="border-t my-2"></div>
+                      <div className="flex justify-between items-baseline text-lg">
+                          <span className="font-semibold">Total Amount:</span>
+                          <span className="font-bold text-primary">Rs 2,500</span>
+                      </div>
+                  </CardContent>
+                  <CardFooter>
+                      <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="w-full">Pay Now</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[480px]">
+                          <DialogHeader>
+                            <DialogTitle>Submit Payment Proof</DialogTitle>
+                            <p className="text-sm text-muted-foreground pt-2">
+                              Pay via PhonePe/GPay to UPI ID: <strong className="text-foreground">society-upi@bank</strong>. Then, upload the payment screenshot below.
+                            </p>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="name">Name</Label>
+                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="flat">Flat No.</Label>
+                              <Input id="flat" value={flat} onChange={(e) => setFlat(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="paymentFor">Payment For</Label>
+                              <Input id="paymentFor" value={paymentFor} onChange={(e) => setPaymentFor(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="screenshot">Upload Payment Screenshot</Label>
+                              <Input id="screenshot" type="file" />
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="flat">Flat No.</Label>
-                            <Input id="flat" value={flat} onChange={(e) => setFlat(e.target.value)} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="paymentFor">Payment For</Label>
-                            <Input id="paymentFor" value={paymentFor} onChange={(e) => setPaymentFor(e.target.value)} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="screenshot">Upload Payment Screenshot</Label>
-                            <Input id="screenshot" type="file" />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button type="submit" className="w-full" onClick={handleSubmit}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Submit for Verification
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                </CardFooter>
-            </Card>
-        </div>
+                          <DialogFooter>
+                            <Button type="submit" className="w-full" onClick={handleSubmit}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Submit for Verification
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                  </CardFooter>
+              </Card>
+          </div>
+        )}
       </div>
     </>
   );
