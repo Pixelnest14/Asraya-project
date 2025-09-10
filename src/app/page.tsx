@@ -4,7 +4,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AsrayaLogo } from '@/components/icons';
@@ -13,8 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useFirebase } from '@/components/firebase-provider';
 
 export default function LoginPage() {
+  const { auth } = useFirebase();
   const [role, setRole] = useState('tenant');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,8 +23,19 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const isFirebaseReady = !!auth;
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFirebaseReady) {
+        toast({
+            title: 'Initialization Error',
+            description: 'Firebase is not ready. Please wait a moment and try again.',
+            variant: 'destructive',
+        });
+        return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -67,7 +79,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="role">I am a...</Label>
-              <Select value={role} onValueChange={setRole} disabled={isLoading}>
+              <Select value={role} onValueChange={setRole} disabled={isLoading || !isFirebaseReady}>
                 <SelectTrigger id="role">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -86,7 +98,7 @@ export default function LoginPage() {
                 placeholder="Enter your email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || !isFirebaseReady}
               />
                <p className="text-xs text-muted-foreground">Hint: Use tenant@asraya.com, owner@asraya.com, or admin@asraya.com with password 'password'</p>
             </div>
@@ -98,10 +110,10 @@ export default function LoginPage() {
                 placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || !isFirebaseReady}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || !isFirebaseReady}>
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
             <div className="text-center">

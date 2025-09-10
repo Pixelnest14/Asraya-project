@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { FirebaseProvider } from "@/components/firebase-provider";
 
 export const metadata: Metadata = {
   title: "Asraya Society Hub",
@@ -20,7 +21,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased dark">
-        {children}
+        <FirebaseProvider>
+          {children}
+        </FirebaseProvider>
         <Toaster />
       </body>
     </html>
