@@ -36,37 +36,54 @@ export default function SmartLightsPage() {
 
     useEffect(() => {
         if (!db) return;
-        
-        const lightZonesCollection = collection(db, "lightZones");
 
-        const setupInitialZones = async () => {
-            for (const zoneData of initialLightZones) {
-                const zoneId = zoneData.name.replace(/\s+/g, '-').toLowerCase();
-                const docRef = doc(db, "lightZones", zoneId);
-                const docSnap = await getDoc(docRef);
-                if (!docSnap.exists()) {
-                    await setDoc(docRef, zoneData);
+        const setupAndFetchZones = async () => {
+            setIsLoading(true);
+            const lightZonesCollection = collection(db, "lightZones");
+
+            // Ensure all initial zones exist before setting up the listener
+            try {
+                for (const zoneData of initialLightZones) {
+                    const zoneId = zoneData.name.replace(/\s+/g, '-').toLowerCase();
+                    const docRef = doc(db, "lightZones", zoneId);
+                    const docSnap = await getDoc(docRef);
+                    if (!docSnap.exists()) {
+                        await setDoc(docRef, zoneData);
+                    }
                 }
+            } catch (error) {
+                console.error("Error setting up initial zones:", error);
+                toast({ title: "Initialization Error", description: "Could not create default light zones.", variant: "destructive" });
             }
+
+            // Now, set up the real-time listener
+            const unsubscribe = onSnapshot(lightZonesCollection,
+                (snapshot) => {
+                    const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
+                    setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
+                    setIsLoading(false);
+                },
+                (error) => {
+                    console.error("Error fetching light zones:", error);
+                    toast({ title: "Error", description: "Could not fetch light zone data.", variant: "destructive" });
+                    setIsLoading(false);
+                }
+            );
+
+            return unsubscribe;
         };
 
-        setupInitialZones();
+        const unsubscribePromise = setupAndFetchZones();
 
-        const unsubscribe = onSnapshot(lightZonesCollection, 
-            (snapshot) => {
-                const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
-                setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
-                setIsLoading(false);
-            },
-            (error) => {
-                console.error("Error fetching light zones:", error);
-                toast({ title: "Error", description: "Could not fetch light zone data.", variant: "destructive" });
-                setIsLoading(false);
-            }
-        );
-
-        return () => unsubscribe();
+        return () => {
+            unsubscribePromise.then(unsubscribe => {
+                if (unsubscribe) {
+                    unsubscribe();
+                }
+            });
+        };
     }, [db, toast]);
+
 
     const handleToggle = async (id: string, currentStatus: LightZone['status']) => {
         if (!db) return;

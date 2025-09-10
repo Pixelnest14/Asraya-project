@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -20,6 +20,15 @@ type LightZone = {
     icon: "Lightbulb";
 };
 
+const initialLightZones: Omit<LightZone, 'id'>[] = [
+    { name: "Lobby & Entrance", status: "On", icon: "Lightbulb" },
+    { name: "Garden Area", status: "On (Auto)", icon: "Lightbulb" },
+    { name: "1st Floor Corridor", status: "Off", icon: "Lightbulb" },
+    { name: "2nd Floor Corridor", status: "On", icon: "Lightbulb" },
+    { name: "3rd Floor Corridor", status: "Off", icon: "Lightbulb" },
+    { name: "Parking Area", status: "On (Auto)", icon: "Lightbulb" },
+];
+
 export default function SmartHomePage() {
     const { toast } = useToast();
     const { db } = useFirebase();
@@ -28,20 +37,50 @@ export default function SmartHomePage() {
 
     useEffect(() => {
         if (!db) return;
-        setIsLoading(true);
-        const unsubscribe = onSnapshot(collection(db, "lightZones"), 
-            (snapshot) => {
-                const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
-                setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
-                setIsLoading(false);
-            },
-            (error) => {
-                console.error("Error fetching light zones:", error);
-                toast({ title: "Error", description: "Could not fetch light zone data.", variant: "destructive" });
-                setIsLoading(false);
+
+        const setupAndFetchZones = async () => {
+            setIsLoading(true);
+            const lightZonesCollection = collection(db, "lightZones");
+
+            // This is primarily for the admin to set up, but doesn't hurt to have a fallback here
+            try {
+                for (const zoneData of initialLightZones) {
+                    const zoneId = zoneData.name.replace(/\s+/g, '-').toLowerCase();
+                    const docRef = doc(db, "lightZones", zoneId);
+                    const docSnap = await getDoc(docRef);
+                    if (!docSnap.exists()) {
+                        await setDoc(docRef, zoneData);
+                    }
+                }
+            } catch (error) {
+                console.error("Error setting up initial zones:", error);
             }
-        );
-        return () => unsubscribe();
+
+            const unsubscribe = onSnapshot(collection(db, "lightZones"), 
+                (snapshot) => {
+                    const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
+                    setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
+                    setIsLoading(false);
+                },
+                (error) => {
+                    console.error("Error fetching light zones:", error);
+                    toast({ title: "Error", description: "Could not fetch light zone data.", variant: "destructive" });
+                    setIsLoading(false);
+                }
+            );
+
+            return unsubscribe;
+        };
+        
+        const unsubscribePromise = setupAndFetchZones();
+
+        return () => {
+             unsubscribePromise.then(unsubscribe => {
+                if (unsubscribe) {
+                    unsubscribe();
+                }
+            });
+        };
     }, [db, toast]);
 
     const handleToggle = async (id: string, currentStatus: LightZone['status']) => {
@@ -195,4 +234,3 @@ export default function SmartHomePage() {
     </>
   );
 }
-
