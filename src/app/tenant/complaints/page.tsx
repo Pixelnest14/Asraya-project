@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 
@@ -30,16 +29,17 @@ export default function TenantComplaintsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const { user: currentUser, isLoading: isAuthLoading } = useFirebase();
+  const { db, user, isLoading: isAuthLoading } = useFirebase();
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (!db || isAuthLoading || !user) {
+        setComplaints([]);
+        return;
+    };
 
-    const q = currentUser 
-        ? query(collection(db, "complaints"), where("userId", "==", currentUser.uid))
-        : collection(db, "complaints"); // Or a query for public complaints
+    const q = query(collection(db, "complaints"), where("userId", "==", user.uid));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const complaintsData: Complaint[] = [];
@@ -58,7 +58,7 @@ export default function TenantComplaintsPage() {
     });
 
     return () => unsubscribe();
-  }, [currentUser, isAuthLoading]);
+  }, [db, user, isAuthLoading]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -74,6 +74,11 @@ export default function TenantComplaintsPage() {
         toast({ title: "Please fill out all fields.", variant: "destructive" });
         return;
     }
+    
+    if (!db || !user) {
+        toast({ title: "You must be logged in to file a complaint.", variant: "destructive" });
+        return;
+    }
 
     try {
       await addDoc(collection(db, "complaints"), {
@@ -81,8 +86,8 @@ export default function TenantComplaintsPage() {
         description,
         date: Timestamp.now(),
         status: "New",
-        userName: "Anonymous",
-        userFlat: "N/A"
+        userId: user.uid,
+        userFlat: "A-101" // Example, ideally this comes from user profile
       });
 
       toast({
