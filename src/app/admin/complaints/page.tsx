@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, Timestamp, getDocs, addDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 
@@ -23,6 +23,23 @@ type Complaint = {
   status: string;
 };
 
+const createSampleComplaint = async (db) => {
+  try {
+    console.log("Creating sample complaint...");
+    await addDoc(collection(db, "complaints"), {
+      category: "Plumbing",
+      description: "This is a sample complaint. The faucet in the common area washroom is leaking constantly.",
+      date: Timestamp.now(),
+      status: "New",
+      userId: "sample-user-id",
+      userFlat: "A-101"
+    });
+    console.log("Sample complaint created.");
+  } catch (error) {
+    console.error("Error creating sample complaint: ", error);
+  }
+};
+
 export default function AdminComplaintsPage() {
   const { db } = useFirebase();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -32,23 +49,51 @@ export default function AdminComplaintsPage() {
 
   useEffect(() => {
     if (!db) return;
-    setIsLoading(true);
-    const unsubscribe = onSnapshot(collection(db, "complaints"), (snapshot) => {
-      const complaintsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          category: data.category,
-          description: data.description,
-          date: (data.date as Timestamp).toDate().toLocaleDateString(),
-          raisedBy: data.userFlat || 'N/A', // Assuming userFlat is stored
-          status: data.status,
-        };
-      });
-      setComplaints(complaintsData);
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
+
+    const setupAndFetchComplaints = async () => {
+        setIsLoading(true);
+        const complaintsCollection = collection(db, "complaints");
+
+        try {
+            const snapshot = await getDocs(complaintsCollection);
+            if (snapshot.empty) {
+                await createSampleComplaint(db);
+            }
+        } catch (error) {
+            console.error("Error checking for initial complaints:", error);
+        }
+
+        const unsubscribe = onSnapshot(complaintsCollection, (snapshot) => {
+          const complaintsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              category: data.category,
+              description: data.description,
+              date: (data.date as Timestamp).toDate().toLocaleDateString(),
+              raisedBy: data.userFlat || 'N/A',
+              status: data.status,
+            };
+          }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setComplaints(complaintsData);
+          setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching complaints:", error);
+            setIsLoading(false);
+        });
+
+        return unsubscribe;
+    };
+
+    const unsubscribePromise = setupAndFetchComplaints();
+
+    return () => {
+        unsubscribePromise.then(unsubscribe => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        });
+    };
   }, [db]);
   
   const getStatusVariant = (status: string) => {
