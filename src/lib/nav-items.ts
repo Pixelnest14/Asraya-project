@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 
 export type NavItem = {
@@ -50,5 +51,4 @@ export const ownerNavItems: NavItem[] = [
   { label: "Emergency", href: "/owner/emergency-alert", icon: "ShieldAlert" },
   { label: "AI Assistant", href: "/owner/chatbot", icon: "Bot" },
   { label: "Smart Home", href: "/owner/smart-home", icon: "Home" },
-  { label: "My Tenants", href: "/owner/my-tenants", icon: "UserCheck" },
 ];
