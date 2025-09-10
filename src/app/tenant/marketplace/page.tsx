@@ -39,6 +39,8 @@ export default function TenantMarketplacePage() {
     const [itemName, setItemName] = useState("");
     const [category, setCategory] = useState("");
     const [cost, setCost] = useState("");
+    const [sellerName, setSellerName] = useState("");
+
 
     const fetchItems = async () => {
         setIsLoading(true);
@@ -61,7 +63,7 @@ export default function TenantMarketplacePage() {
 
     useEffect(() => {
         fetchItems();
-    }, [toast]);
+    }, []);
 
     const handleContact = (item: MarketplaceItem) => {
         const sellerInfo = { name: item.seller, phone: "987-654-3210" };
@@ -70,7 +72,7 @@ export default function TenantMarketplacePage() {
     };
 
     const handlePostItem = async () => {
-        if (!itemName || !category || !cost) {
+        if (!itemName || !category || !cost || !sellerName) {
             toast({
                 title: "Missing Information",
                 description: "Please fill out all fields to post an item.",
@@ -83,9 +85,9 @@ export default function TenantMarketplacePage() {
             await addDoc(collection(db, "marketplace"), {
                 title: itemName,
                 category: category,
-                price: cost,
+                price: `Rs ${cost}`,
                 description: "A great item posted by a resident.", // Placeholder description
-                seller: "Mr. Raj (A-101)", // Placeholder seller
+                seller: sellerName,
                 image: `https://picsum.photos/seed/${Math.random()}/600/400`,
                 dataAiHint: "new item",
                 createdAt: Timestamp.now(),
@@ -100,6 +102,7 @@ export default function TenantMarketplacePage() {
             setItemName("");
             setCategory("");
             setCost("");
+            setSellerName("");
             // Refresh items
             fetchItems();
         } catch (error) {
@@ -152,12 +155,12 @@ export default function TenantMarketplacePage() {
                                 </Select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="cost" className="text-right">Cost</Label>
-                                <Input id="cost" placeholder="e.g., Rs 3000" className="col-span-3" value={cost} onChange={(e) => setCost(e.target.value)} />
+                                <Label htmlFor="cost" className="text-right">Cost (Rs)</Label>
+                                <Input id="cost" placeholder="e.g., 3000" type="number" className="col-span-3" value={cost} onChange={(e) => setCost(e.target.value)} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="sold-by" className="text-right">Sold By</Label>
-                                <Input id="sold-by" value="Mr. Raj (A-101)" disabled className="col-span-3" />
+                                <Input id="sold-by" placeholder="e.g., Mr. Raj (A-101)" className="col-span-3" value={sellerName} onChange={(e) => setSellerName(e.target.value)} />
                             </div>
                         </div>
                         <DialogFooter>
