@@ -13,9 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, onSnapshot, Timestamp } from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { useFirebase } from "@/components/firebase-provider";
 
 type Complaint = {
   id: string;
@@ -30,16 +30,9 @@ export default function TenantComplaintsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user: currentUser, isLoading: isAuthLoading } = useFirebase();
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -74,6 +67,7 @@ export default function TenantComplaintsPage() {
   };
   
   const handleSubmit = async () => {
+    if (isAuthLoading) return;
     if (!currentUser) {
       toast({ title: "Please log in to file a complaint.", variant: "destructive" });
       return;
@@ -90,6 +84,8 @@ export default function TenantComplaintsPage() {
         date: Timestamp.now(),
         status: "New",
         userId: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email,
+        userFlat: "A-101" // This should be fetched from user profile in a real app
       });
 
       toast({
