@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
 
 export default function LoginPage() {
-  const { auth } = useFirebase();
+  const { auth, isLoading: isFirebaseLoading } = useFirebase();
   const [role, setRole] = useState('tenant');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,11 +23,9 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const isFirebaseReady = !!auth;
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFirebaseReady) {
+    if (!auth) {
         toast({
             title: 'Initialization Error',
             description: 'Firebase is not ready. Please wait a moment and try again.',
@@ -69,7 +67,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="role">I am a...</Label>
-              <Select value={role} onValueChange={setRole} disabled={isLoading || !isFirebaseReady}>
+              <Select value={role} onValueChange={setRole} disabled={isLoading || isFirebaseLoading}>
                 <SelectTrigger id="role">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -88,7 +86,7 @@ export default function LoginPage() {
                 placeholder="Enter your email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading || !isFirebaseReady}
+                disabled={isLoading || isFirebaseLoading}
               />
                <p className="text-xs text-muted-foreground">Hint: Use tenant@asraya.com, owner@asraya.com, or admin@asraya.com with password 'password'</p>
             </div>
@@ -100,11 +98,11 @@ export default function LoginPage() {
                 placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading || !isFirebaseReady}
+                disabled={isLoading || isFirebaseLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading || !isFirebaseReady}>
-              {isLoading ? 'Logging in...' : 'Login'}
+            <Button type="submit" className="w-full" disabled={isLoading || isFirebaseLoading}>
+              {isFirebaseLoading ? 'Initializing...' : isLoading ? 'Logging in...' : 'Login'}
             </Button>
             <div className="text-center">
                <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
