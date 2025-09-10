@@ -26,6 +26,7 @@ type Poll = {
   status: 'Active' | 'Closed';
   options: PollOption[];
   totalVotes: number;
+  createdAt: Timestamp;
 };
 
 export default function AdminVotingPage() {
