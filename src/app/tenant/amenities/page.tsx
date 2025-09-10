@@ -60,12 +60,17 @@ export default function AmenitiesPage() {
   };
 
   const handleConfirmBooking = async () => {
+    if (!user) {
+        toast({ title: "Please log in to book an amenity.", variant: "destructive" });
+        return;
+    }
+
     if (selectedAmenity && selectedDate) {
         try {
             await addDoc(collection(db, "bookings"), {
                 amenityId: selectedAmenity.id,
                 amenityName: selectedAmenity.name,
-                userId: user?.uid, // Rely on Firestore rules for security
+                userId: user.uid,
                 bookingDate: Timestamp.fromDate(selectedDate),
                 status: "Confirmed",
             });
@@ -77,7 +82,7 @@ export default function AmenitiesPage() {
         } catch (error) {
              toast({
                 title: "Booking Failed",
-                description: "Could not save your booking. You may need to be logged in.",
+                description: "Could not save your booking.",
                 variant: "destructive",
             });
             console.error("Error adding booking: ", error);
