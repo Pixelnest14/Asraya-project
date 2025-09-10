@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, RefreshCw, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type PollOption = {
@@ -29,6 +29,25 @@ type Poll = {
   createdAt: Timestamp;
 };
 
+// Function to create a sample poll
+const createSamplePoll = async (db) => {
+    try {
+        await addDoc(collection(db, "polls"), {
+            question: "Should we get new equipment for the gym?",
+            options: [
+                { text: "Yes, definitely!", votes: 0 },
+                { text: "No, the current equipment is fine.", votes: 0 }
+            ],
+            status: "Active",
+            totalVotes: 0,
+            createdAt: Timestamp.now(),
+        });
+        console.log("Sample poll created.");
+    } catch (error) {
+        console.error("Error creating sample poll: ", error);
+    }
+};
+
 export default function AdminVotingPage() {
     const { toast } = useToast();
     const { db } = useFirebase();
@@ -42,29 +61,54 @@ export default function AdminVotingPage() {
 
     useEffect(() => {
         if (!db) return;
-        setIsLoading(true);
-        const pollsQuery = query(collection(db, "polls"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(pollsQuery, (snapshot) => {
-            const pollsData = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    question: data.question,
-                    status: data.status,
-                    // Ensure options and totalVotes have default values if they are missing
-                    options: data.options || [],
-                    totalVotes: data.totalVotes || 0,
-                    createdAt: data.createdAt
-                } as Poll;
+
+        const setupAndFetchPolls = async () => {
+            setIsLoading(true);
+            const pollsCollection = collection(db, "polls");
+
+            // Check if the collection is empty and create a sample if it is
+            try {
+                const initialSnapshot = await getDocs(pollsCollection);
+                if (initialSnapshot.empty) {
+                    await createSamplePoll(db);
+                }
+            } catch (error) {
+                console.error("Error checking for initial polls:", error);
+            }
+
+            // Set up the real-time listener
+            const pollsQuery = query(pollsCollection, orderBy("createdAt", "desc"));
+            const unsubscribe = onSnapshot(pollsQuery, (snapshot) => {
+                const pollsData = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        question: data.question,
+                        status: data.status,
+                        options: data.options || [],
+                        totalVotes: data.totalVotes || 0,
+                        createdAt: data.createdAt
+                    } as Poll;
+                });
+                setPolls(pollsData);
+                setIsLoading(false);
+            }, (error) => {
+                console.error("Error fetching polls: ", error);
+                toast({ title: "Error fetching polls", variant: "destructive" });
+                setIsLoading(false);
             });
-            setPolls(pollsData);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching polls: ", error);
-            toast({ title: "Error fetching polls", variant: "destructive" });
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
+            return unsubscribe;
+        };
+        
+        const unsubscribePromise = setupAndFetchPolls();
+        
+        return () => {
+            unsubscribePromise.then(unsubscribe => {
+                if (unsubscribe) {
+                    unsubscribe();
+                }
+            });
+        };
     }, [db, toast]);
 
     const handleOptionChange = (index: number, value: string) => {
@@ -260,3 +304,5 @@ export default function AdminVotingPage() {
         </>
     );
 }
+
+    
