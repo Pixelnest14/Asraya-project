@@ -24,14 +24,14 @@ type Apartment = {
 };
 
 export default function ApartmentsPage() {
-  const { db } = useFirebase();
+  const { db, isLoading: isAuthLoading } = useFirebase();
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [blockFilter, setBlockFilter] = useState("all");
 
   useEffect(() => {
-    if (!db) return;
+    if (isAuthLoading || !db) return;
 
     const setupAndFetchApartments = async () => {
         setIsLoading(true);
@@ -65,7 +65,7 @@ export default function ApartmentsPage() {
     return () => {
         unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
     };
-  }, [db]);
+  }, [db, isAuthLoading]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {

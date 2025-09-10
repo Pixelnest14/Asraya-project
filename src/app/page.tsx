@@ -81,6 +81,14 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+     // If we're using placeholder credentials, just navigate to the correct page.
+    if (firebaseConfig.apiKey === 'your-api-key') {
+      toast({ title: 'Login Successful (Prototype Mode)!' });
+      router.push('/tenant');
+      setIsLoading(false);
+      return;
+    }
+
     if (!auth) {
         toast({ title: "Authentication service is not ready.", variant: "destructive" });
         setIsLoading(false);
