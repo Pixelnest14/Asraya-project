@@ -24,7 +24,7 @@ type ParkingSlot = {
 };
 
 export default function ParkingPage() {
-  const { db } = useFirebase();
+  const { db, isLoading: isAuthLoading } = useFirebase();
   const { toast } = useToast();
   
   const [parkingSlots, setParkingSlots] = useState<ParkingSlot[]>([]);
@@ -34,7 +34,7 @@ export default function ParkingPage() {
   const [flatNumber, setFlatNumber] = useState("");
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || isAuthLoading) return;
 
     const setupAndFetchSlots = async () => {
       setIsLoading(true);
@@ -70,7 +70,7 @@ export default function ParkingPage() {
     return () => {
       unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
     };
-  }, [db]);
+  }, [db, isAuthLoading]);
 
   const handleAllotClick = (slot: ParkingSlot) => {
     setSelectedSlot(slot);
@@ -152,7 +152,7 @@ export default function ParkingPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading ? (
+          {isLoading || isAuthLoading ? (
             [...Array(initialParkingSlots.length)].map((_, i) => <Skeleton key={i} className="h-48" />)
           ) : (
             parkingSlots.map(slot => {
@@ -188,7 +188,7 @@ export default function ParkingPage() {
               <CardTitle>Parking Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLoading ? (
+              {isLoading || isAuthLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-6 w-full" />
                   <Skeleton className="h-6 w-full" />
