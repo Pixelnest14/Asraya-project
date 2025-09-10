@@ -96,52 +96,52 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  if (!isClient) {
+      return null;
+  }
 
   return (
      <SidebarProvider>
-      <div className="min-h-screen w-full bg-background text-foreground">
-        {isClient && (
-          <>
-            <Sidebar>
-              <SidebarHeader className="p-4">
-                <div className="flex items-center gap-3">
-                  <AsrayaLogo className="h-8 w-8" />
-                  <div>
-                    <h2 className="font-headline text-2xl font-semibold text-primary">ASRAYA</h2>
-                    <p className="text-sm text-muted-foreground">{role} Portal</p>
-                  </div>
-                </div>
-              </SidebarHeader>
-              <SidebarContent className="p-2">
-                <SidebarNavigation navItems={navItems} />
-              </SidebarContent>
-              <SidebarFooter className="p-4">
-                <Button variant="ghost" className="w-full justify-start gap-2" asChild>
-                    <Link href="/">
-                        <LogOut className="h-5 w-5" />
-                        <span>Logout</span>
-                    </Link>
+      <div className="flex min-h-screen w-full bg-background text-foreground">
+        <Sidebar>
+          <SidebarHeader className="p-4">
+            <div className="flex items-center gap-3">
+              <AsrayaLogo className="h-8 w-8" />
+              <div>
+                <h2 className="font-headline text-2xl font-semibold text-primary">ASRAYA</h2>
+                <p className="text-sm text-muted-foreground">{role} Portal</p>
+              </div>
+            </div>
+          </SidebarHeader>
+          <SidebarContent className="p-2">
+            <SidebarNavigation navItems={navItems} />
+          </SidebarContent>
+          <SidebarFooter className="p-4">
+            <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                <Link href="/">
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                </Link>
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+            <SidebarTrigger className="sm:hidden" />
+            <div className="flex items-center gap-4 ml-auto">
+                <Button variant="ghost" size="icon">
+                    <Bell className="h-5 w-5"/>
+                    <span className="sr-only">Notifications</span>
                 </Button>
-              </SidebarFooter>
-            </Sidebar>
-            <SidebarInset>
-              <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-                <SidebarTrigger className="sm:hidden" />
-                <div className="flex items-center gap-4 ml-auto">
-                    <Button variant="ghost" size="icon">
-                        <Bell className="h-5 w-5"/>
-                        <span className="sr-only">Notifications</span>
-                    </Button>
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
-                        <AvatarFallback>{role.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                </div>
-              </header>
-              <main className="p-4 sm:p-6 lg:p-8">{children}</main>
-            </SidebarInset>
-          </>
-        )}
+                <Avatar className="h-9 w-9">
+                    <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
+                    <AvatarFallback>{role.charAt(0)}</AvatarFallback>
+                </Avatar>
+            </div>
+          </header>
+          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
