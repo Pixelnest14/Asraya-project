@@ -1,3 +1,4 @@
+
 "use client"
 
 import { PageHeader } from "@/components/page-header";
@@ -21,6 +22,9 @@ const bills = [
 export default function TenantBillsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState("Mr. Raj (Tenant)");
+  const [flat, setFlat] = useState("A-101");
+  const [paymentFor, setPaymentFor] = useState("Maintenance Charges - Q2 2024");
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -117,15 +121,15 @@ export default function TenantBillsPage() {
                         <div className="grid gap-4 py-4">
                           <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input id="name" defaultValue="Mr. Raj (Tenant)" disabled />
+                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="flat">Flat No.</Label>
-                            <Input id="flat" defaultValue="A-101" disabled />
+                            <Input id="flat" value={flat} onChange={(e) => setFlat(e.target.value)} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="paymentFor">Payment For</Label>
-                            <Input id="paymentFor" defaultValue="Maintenance Charges - Q2 2024" disabled />
+                            <Input id="paymentFor" value={paymentFor} onChange={(e) => setPaymentFor(e.target.value)} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="screenshot">Upload Payment Screenshot</Label>
