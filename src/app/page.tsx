@@ -39,16 +39,6 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      if (role === 'admin' && email !== 'admin@asraya.com') {
-         throw new Error("Invalid admin credentials");
-      }
-      if (role === 'owner' && email !== 'owner@asraya.com') {
-         throw new Error("Invalid owner credentials");
-      }
-      if (role === 'tenant' && email !== 'tenant@asraya.com') {
-         throw new Error("Invalid tenant credentials");
-      }
-      
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Login Successful!' });
       router.push(`/${role}`);
@@ -57,7 +47,7 @@ export default function LoginPage() {
       console.error("Login failed:", error);
       toast({
         title: 'Login Failed',
-        description: (error as Error).message || 'Please check your credentials and try again.',
+        description: 'Please check your credentials and try again.',
         variant: 'destructive',
       });
     } finally {
