@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
 
 const bills = [
     { invoice: "INV-2023-010", date: "2023-10-01", amount: "Rs 2,500", status: "Paid" },
@@ -21,6 +23,7 @@ const bills = [
 
 export default function TenantBillsPage() {
   const { toast } = useToast();
+  const { db } = useFirebase();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Mr. Raj (Tenant)");
   const [flat, setFlat] = useState("A-101");
@@ -34,12 +37,48 @@ export default function TenantBillsPage() {
     }
   };
 
-  const handleSubmit = () => {
-    toast({
-        title: "Proof Submitted!",
-        description: "Your payment proof has been submitted for verification.",
-    });
-    setOpen(false);
+  const handleSubmit = async () => {
+    if (!name || !flat || !paymentFor) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!db) {
+      toast({
+        title: "Database Error",
+        description: "Could not connect to the database. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "paymentProofs"), {
+        name,
+        flat,
+        paymentFor,
+        submittedAt: Timestamp.now(),
+        status: "Pending Verification"
+      });
+
+      toast({
+          title: "Proof Submitted!",
+          description: "Your payment proof has been submitted for verification.",
+      });
+      setOpen(false);
+
+    } catch (error) {
+      console.error("Error submitting payment proof: ", error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your proof. Please try again.",
+        variant: "destructive"
+      });
+    }
   }
 
   return (
