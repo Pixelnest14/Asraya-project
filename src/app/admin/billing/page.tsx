@@ -1,4 +1,6 @@
 
+"use client";
+
 import { PageHeader } from "@/components/page-header";
 import { billings } from "@/lib/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BillingPage() {
+  const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -16,6 +20,13 @@ export default function BillingPage() {
       case 'Due': return 'secondary';
       default: return 'outline';
     }
+  };
+
+  const handleSendReminder = (flat: string) => {
+    toast({
+      title: "Reminder Sent!",
+      description: `A payment reminder has been sent to flat ${flat}.`,
+    });
   };
 
   return (
@@ -56,7 +67,14 @@ export default function BillingPage() {
                     <Badge variant={getStatusVariant(billing.status)}>{billing.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm">Send Reminder</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleSendReminder(billing.flat)}
+                      disabled={billing.status === 'Paid'}
+                    >
+                      Send Reminder
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
