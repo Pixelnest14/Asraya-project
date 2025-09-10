@@ -217,7 +217,7 @@ const Sidebar = React.forwardRef<
       <aside
         ref={ref}
         className={cn(
-            "group peer hidden md:block text-sidebar-foreground bg-sidebar border-r transition-[width] duration-300 ease-in-out", 
+            "group peer hidden md:flex flex-col text-sidebar-foreground bg-sidebar border-r transition-[width] duration-300 ease-in-out", 
             state === 'expanded' ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
             className
         )}

@@ -126,22 +126,22 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
             </Button>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-            <SidebarTrigger className="sm:hidden" />
-            <div className="flex items-center gap-4 ml-auto">
-                <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5"/>
-                    <span className="sr-only">Notifications</span>
-                </Button>
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
-                    <AvatarFallback>{role.charAt(0)}</AvatarFallback>
-                </Avatar>
-            </div>
-          </header>
-          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
-        </SidebarInset>
+        <div className="flex flex-col w-full">
+            <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+                <SidebarTrigger className="sm:hidden" />
+                <div className="flex items-center gap-4 ml-auto">
+                    <Button variant="ghost" size="icon">
+                        <Bell className="h-5 w-5"/>
+                        <span className="sr-only">Notifications</span>
+                    </Button>
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
+                        <AvatarFallback>{role.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </div>
+            </header>
+            <main className="p-4 sm:p-6 lg:p-8 flex-1">{children}</main>
+        </div>
       </div>
     </SidebarProvider>
   );
