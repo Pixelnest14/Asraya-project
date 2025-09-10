@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { tenantComplaints } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +12,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { db, auth } from "@/lib/firebase";
+import { collection, addDoc, query, where, onSnapshot, Timestamp } from "firebase/firestore";
+import { onAuthStateChanged, User } from "firebase/auth";
+
+type Complaint = {
+  id: string;
+  category: string;
+  description: string;
+  date: string;
+  status: string;
+  userId: string;
+};
 
 export default function TenantComplaintsPage() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const q = query(collection(db, "complaints"), where("userId", "==", currentUser.uid));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const complaintsData: Complaint[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        complaintsData.push({
+          id: doc.id,
+          category: data.category,
+          description: data.description,
+          date: (data.date as Timestamp).toDate().toLocaleDateString(),
+          status: data.status,
+          userId: data.userId,
+        });
+      });
+      setComplaints(complaintsData);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -27,12 +72,40 @@ export default function TenantComplaintsPage() {
     }
   };
   
-  const handleSubmit = () => {
-    toast({
-        title: "Complaint Filed!",
-        description: "Your complaint has been submitted and will be reviewed shortly.",
-    });
-    setOpen(false);
+  const handleSubmit = async () => {
+    if (!currentUser) {
+      toast({ title: "Please log in to file a complaint.", variant: "destructive" });
+      return;
+    }
+    if (!category || !description) {
+        toast({ title: "Please fill out all fields.", variant: "destructive" });
+        return;
+    }
+
+    try {
+      await addDoc(collection(db, "complaints"), {
+        category,
+        description,
+        date: Timestamp.now(),
+        status: "New",
+        userId: currentUser.uid,
+      });
+
+      toast({
+          title: "Complaint Filed!",
+          description: "Your complaint has been submitted and will be reviewed shortly.",
+      });
+      setOpen(false);
+      setCategory("");
+      setDescription("");
+    } catch (error) {
+       toast({
+          title: "Error",
+          description: "There was an error submitting your complaint.",
+          variant: "destructive"
+      });
+      console.error("Error adding document: ", error);
+    }
   }
 
   return (
@@ -60,7 +133,7 @@ export default function TenantComplaintsPage() {
                 <Label htmlFor="category" className="text-right">
                   Category
                 </Label>
-                <Select>
+                <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
@@ -77,7 +150,13 @@ export default function TenantComplaintsPage() {
                 <Label htmlFor="description" className="text-right pt-2">
                   Description
                 </Label>
-                <Textarea id="description" placeholder="Please describe the issue." className="col-span-3" />
+                <Textarea 
+                    id="description" 
+                    placeholder="Please describe the issue." 
+                    className="col-span-3"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                 />
               </div>
             </div>
             <DialogFooter>
@@ -103,17 +182,23 @@ export default function TenantComplaintsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tenantComplaints.map((complaint) => (
-                <TableRow key={complaint.id}>
-                  <TableCell>{complaint.id}</TableCell>
-                  <TableCell>{complaint.category}</TableCell>
-                  <TableCell>{complaint.date}</TableCell>
-                  <TableCell className="max-w-sm truncate">{complaint.description}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(complaint.status)}>{complaint.status}</Badge>
-                  </TableCell>
+              {complaints.length > 0 ? (
+                complaints.map((complaint) => (
+                  <TableRow key={complaint.id}>
+                    <TableCell className="font-mono">{complaint.id.substring(0, 6)}...</TableCell>
+                    <TableCell>{complaint.category}</TableCell>
+                    <TableCell>{complaint.date}</TableCell>
+                    <TableCell className="max-w-sm truncate">{complaint.description}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(complaint.status)}>{complaint.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">You have not filed any complaints yet.</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

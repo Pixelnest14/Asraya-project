@@ -109,12 +109,6 @@ export const publishedNotices = [
     { id: 3, title: "Annual General Meeting", date: "June 20, 2024" },
 ];
 
-export const tenantComplaints = [
-    { id: 'TC001', category: 'Plumbing', date: '2023-10-20', description: 'Leaky faucet in the kitchen sink.', status: 'Resolved' },
-    { id: 'TC002', category: 'Internet', date: '2023-10-22', description: 'Frequent disconnections from the society Wi-Fi.', status: 'In Progress' },
-    { id: 'TC003', category: 'Noise', date: '2023-10-28', description: 'Loud music from the flat above late at night.', status: 'New' },
-];
-
 export const myTenants = [
     { name: "Priya Sharma", status: "Active", property: "A-101" },
     { name: "Suresh Gupta", status: "Inactive", property: "D-405" },
