@@ -23,7 +23,7 @@ type Complaint = {
   description: string;
   date: string;
   status: string;
-  userId: string;
+  userId?: string;
 };
 
 export default function TenantComplaintsPage() {
@@ -35,9 +35,12 @@ export default function TenantComplaintsPage() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (isAuthLoading || !currentUser) return;
+    if (isAuthLoading) return;
 
-    const q = query(collection(db, "complaints"), where("userId", "==", currentUser.uid));
+    const q = currentUser 
+        ? query(collection(db, "complaints"), where("userId", "==", currentUser.uid))
+        : collection(db, "complaints"); // Or a query for public complaints
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const complaintsData: Complaint[] = [];
       querySnapshot.forEach((doc) => {
@@ -67,10 +70,6 @@ export default function TenantComplaintsPage() {
   };
   
   const handleSubmit = async () => {
-    if (!currentUser) {
-        toast({ title: "Please log in to file a complaint.", variant: "destructive" });
-        return;
-    }
     if (!category || !description) {
         toast({ title: "Please fill out all fields.", variant: "destructive" });
         return;
@@ -82,9 +81,8 @@ export default function TenantComplaintsPage() {
         description,
         date: Timestamp.now(),
         status: "New",
-        userId: currentUser.uid,
-        userName: currentUser.displayName || currentUser.email,
-        userFlat: "A-101" // This should be fetched from user profile in a real app
+        userName: "Anonymous",
+        userFlat: "N/A"
       });
 
       toast({
