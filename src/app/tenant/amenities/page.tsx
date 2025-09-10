@@ -1,48 +1,91 @@
 
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Calendar as CalendarIcon, PartyPopper } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar as CalendarIcon, LoaderCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
+import { db, auth } from "@/lib/firebase";
+import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Amenity = {
+  id: string;
   name: string;
   image: string;
   dataAiHint: string;
   description: string;
 };
 
-const amenities: Amenity[] = [
-    { name: "Party Hall", image: "https://picsum.photos/600/400?random=5", dataAiHint: "party hall interior", description: "Perfect for parties and gatherings. Capacity: 50 people." },
-    { name: "Swimming Pool", image: "https://picsum.photos/600/400?random=6", dataAiHint: "swimming pool", description: "Open from 6 AM to 10 PM. Please follow pool rules." },
-    { name: "Badminton Court", image: "https://picsum.photos/600/400?random=7", dataAiHint: "badminton court", description: "Book your slot in advance. Equipment not provided." },
-    { name: "Gym", image: "https://picsum.photos/600/400?random=8", dataAiHint: "gym fitness", description: "Fully equipped gym. Available 24/7 for residents." },
-];
-
-
 export default function AmenitiesPage() {
   const { toast } = useToast();
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedAmenity, setSelectedAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
+  const [user] = useAuthState(auth);
+
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        const amenitiesCollection = collection(db, "amenities");
+        const amenitiesSnapshot = await getDocs(amenitiesCollection);
+        const amenitiesList = amenitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+        setAmenities(amenitiesList);
+      } catch (error) {
+        console.error("Error fetching amenities:", error);
+        toast({
+          title: "Error",
+          description: "Could not load amenities from the database.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAmenities();
+  }, [toast]);
+
 
   const handleBooking = (amenity: Amenity) => {
     setSelectedAmenity(amenity);
     setOpen(true);
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
+    if (!user) {
+        toast({ title: "Please log in to book an amenity.", variant: "destructive" });
+        return;
+    }
     if (selectedAmenity && selectedDate) {
-        toast({
-            title: "Booking Confirmed!",
-            description: `${selectedAmenity.name} has been booked for ${selectedDate.toLocaleDateString()}.`,
-        });
+        try {
+            await addDoc(collection(db, "bookings"), {
+                amenityId: selectedAmenity.id,
+                amenityName: selectedAmenity.name,
+                userId: user.uid,
+                bookingDate: Timestamp.fromDate(selectedDate),
+                status: "Confirmed",
+            });
+
+            toast({
+                title: "Booking Confirmed!",
+                description: `${selectedAmenity.name} has been booked for ${selectedDate.toLocaleDateString()}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Booking Failed",
+                description: "Could not save your booking. Please try again.",
+                variant: "destructive",
+            });
+            console.error("Error adding booking: ", error);
+        }
     }
     setOpen(false);
   }
@@ -53,32 +96,57 @@ export default function AmenitiesPage() {
         title="Book Amenities"
         description="Reserve society facilities for your personal use."
       />
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        {amenities.map(amenity => (
-            <Card key={amenity.name}>
-                 <CardHeader className="p-0">
-                    <Image
-                        src={amenity.image}
-                        alt={amenity.name}
-                        width={600}
-                        height={400}
-                        data-ai-hint={amenity.dataAiHint}
-                        className="object-cover rounded-t-lg aspect-video"
-                    />
-                </CardHeader>
-                <CardContent className="p-4">
-                    <CardTitle className="font-headline">{amenity.name}</CardTitle>
-                    <CardDescription>{amenity.description}</CardDescription>
-                </CardContent>
-                <CardFooter className="p-4 flex gap-2">
-                    <Button className="w-full" onClick={() => handleBooking(amenity)}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        Book Now
-                    </Button>
-                </CardFooter>
-            </Card>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            {[...Array(4)].map((_, i) => (
+                <Card key={i}>
+                    <CardHeader className="p-0">
+                        <Skeleton className="w-full h-[225px] rounded-t-lg" />
+                    </CardHeader>
+                    <CardContent className="p-4">
+                        <Skeleton className="h-6 w-1/2 mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                    <CardFooter className="p-4">
+                        <Skeleton className="h-10 w-full" />
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+      ) : amenities.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            {amenities.map(amenity => (
+                <Card key={amenity.id}>
+                    <CardHeader className="p-0">
+                        <Image
+                            src={amenity.image}
+                            alt={amenity.name}
+                            width={600}
+                            height={400}
+                            data-ai-hint={amenity.dataAiHint}
+                            className="object-cover rounded-t-lg aspect-video"
+                        />
+                    </CardHeader>
+                    <CardContent className="p-4">
+                        <CardTitle className="font-headline">{amenity.name}</CardTitle>
+                        <CardDescription>{amenity.description}</CardDescription>
+                    </CardContent>
+                    <CardFooter className="p-4 flex gap-2">
+                        <Button className="w-full" onClick={() => handleBooking(amenity)}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            Book Now
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            No amenities are available at the moment. Please check back later.
+          </CardContent>
+        </Card>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -93,6 +161,7 @@ export default function AmenitiesPage() {
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 className="rounded-md border"
+                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
               />
           </div>
           <DialogFooter>
