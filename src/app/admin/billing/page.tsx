@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { billings as mockBillings } from "@/lib/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, addDoc, onSnapshot, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, setDoc, doc } from "firebase/firestore";
 
 type Billing = {
   id: string;
@@ -29,7 +28,7 @@ export default function BillingPage() {
   useEffect(() => {
     if (!db) return;
 
-    // A simple representation of all apartments
+    // A simple representation of all apartments in the society
     const allApartments = [
         { flat: "A-101", block: "A" }, { flat: "A-102", block: "A" },
         { flat: "B-201", block: "B" }, { flat: "B-202", block: "B" },
@@ -37,15 +36,18 @@ export default function BillingPage() {
     ];
 
     const unsubscribe = onSnapshot(collection(db, "bills"), (snapshot) => {
-        const billsData = new Map(snapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Billing]));
+        // Create a map of flat -> bill status for quick lookups
+        const billsData = new Map(snapshot.docs.map(doc => [doc.id, doc.data().status]));
         
+        // Combine apartment list with real-time bill status
         const combinedBillings = allApartments.map(apt => {
-            const bill = billsData.get(apt.flat);
+            const status = billsData.get(apt.flat);
             return {
                 id: apt.flat,
                 flat: apt.flat,
                 block: apt.block,
-                status: bill ? bill.status : 'Due',
+                // If a bill exists, use its status; otherwise, it's 'Due'
+                status: status || 'Due',
             };
         });
 
@@ -53,6 +55,7 @@ export default function BillingPage() {
         setIsLoading(false);
     });
 
+    // Cleanup the listener when the component unmounts
     return () => unsubscribe();
 
   }, [db]);
@@ -74,8 +77,9 @@ export default function BillingPage() {
     }
 
     try {
-        // This ensures a bill document exists for the tenant to see.
-        // If it already exists, this does nothing, which is fine.
+        // This creates or updates a bill document for the tenant.
+        // If the document already exists but has a different status (e.g. Paid),
+        // this action effectively re-issues the bill by setting it to 'Due'.
         const billRef = doc(db, "bills", flat);
         await setDoc(billRef, {
             flat: flat,
@@ -83,7 +87,7 @@ export default function BillingPage() {
             description: "Quarterly Maintenance Fee",
             dueDate: "End of the Month",
             status: "Due"
-        }, { merge: true });
+        }, { merge: true }); // Use merge to avoid overwriting other fields if they exist
 
         toast({
             title: "Reminder Sent!",
