@@ -10,12 +10,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, Timestamp, doc, onSnapshot, query, where, updateDoc, setDoc, getDoc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const bills = [
+type Bill = {
+  id: string;
+  amount: number;
+  description: string;
+  dueDate: string;
+  status: 'Due' | 'Pending Verification' | 'Paid';
+};
+
+const pastBills = [
     { invoice: "INV-2023-010", date: "2023-10-01", amount: "Rs 2,500", status: "Paid" },
     { invoice: "INV-2023-009", date: "2023-09-01", amount: "Rs 2,500", status: "Paid" },
     { invoice: "INV-2023-008", date: "2023-08-01", amount: "Rs 2,500", status: "Paid" },
@@ -23,30 +32,50 @@ const bills = [
 
 export default function TenantBillsPage() {
   const { toast } = useToast();
-  const { db } = useFirebase();
+  const { db, user } = useFirebase();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("Mr. Raj (Tenant)");
-  const [flat, setFlat] = useState("A-101");
-  const [paymentFor, setPaymentFor] = useState("Maintenance Charges - Q2 2024");
-  const [isBillPaid, setIsBillPaid] = useState(false);
+  const [outstandingBill, setOutstandingBill] = useState<Bill | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Example user data
+  const userFlat = "A-101";
+  const userName = "Mr. Raj (Tenant)";
+
+  useEffect(() => {
+    if (!db || !user) return;
+    
+    setIsLoading(true);
+    // Listen to changes for this user's specific bill
+    const billRef = doc(db, "bills", userFlat);
+
+    const unsubscribe = onSnapshot(billRef, (doc) => {
+        if (doc.exists() && doc.data().status === 'Due') {
+            setOutstandingBill({ id: doc.id, ...doc.data() } as Bill);
+        } else {
+            setOutstandingBill(null);
+        }
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching bill:", error);
+        toast({ title: "Could not fetch billing information", variant: "destructive" });
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, user, userFlat, toast]);
+
 
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'Paid': return 'default';
       case 'Pending': return 'destructive';
+      case 'Due': return 'destructive';
       default: return 'outline';
     }
   };
 
-  const handleSubmit = async () => {
-    if (!name || !flat || !paymentFor) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill out all fields.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSubmitProof = async () => {
+    if (!outstandingBill) return;
 
     if (!db) {
       toast({
@@ -58,11 +87,19 @@ export default function TenantBillsPage() {
     }
 
     try {
+      // 1. Submit proof for verification
       await addDoc(collection(db, "paymentProofs"), {
-        name,
-        flat,
-        paymentFor,
+        name: userName,
+        flat: userFlat,
+        paymentFor: outstandingBill.description,
+        amount: outstandingBill.amount,
         submittedAt: Timestamp.now(),
+        status: "Pending Verification"
+      });
+      
+      // 2. Update the bill status
+      const billRef = doc(db, "bills", userFlat);
+      await updateDoc(billRef, {
         status: "Pending Verification"
       });
 
@@ -71,7 +108,6 @@ export default function TenantBillsPage() {
           description: "Your payment proof has been submitted for verification.",
       });
       setOpen(false);
-      setIsBillPaid(true);
 
     } catch (error) {
       console.error("Error submitting payment proof: ", error);
@@ -108,7 +144,7 @@ export default function TenantBillsPage() {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {bills.map((bill) => (
+                    {pastBills.map((bill) => (
                         <TableRow key={bill.invoice}>
                         <TableCell>{bill.invoice}</TableCell>
                         <TableCell>{bill.date}</TableCell>
@@ -126,26 +162,22 @@ export default function TenantBillsPage() {
                 </CardContent>
             </Card>
         </div>
-        {!isBillPaid && (
+        
+        {isLoading ? (
+            <div className="md:col-span-1">
+                <Skeleton className="h-48 w-full" />
+            </div>
+        ) : outstandingBill ? (
           <div className="md:col-span-1">
               <Card>
                   <CardHeader>
                       <CardTitle>Current Outstanding Bill</CardTitle>
-                      <CardDescription>Due by November 30, 2023</CardDescription>
+                      <CardDescription>Due: {outstandingBill.dueDate}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                      <div className="flex justify-between items-baseline">
-                          <span className="text-muted-foreground">Maintenance Fee:</span>
-                          <span className="font-bold">Rs 2,000</span>
-                      </div>
-                      <div className="flex justify-between items-baseline">
-                          <span className="text-muted-foreground">Sinking Fund:</span>
-                          <span className="font-bold">Rs 500</span>
-                      </div>
-                      <div className="border-t my-2"></div>
                       <div className="flex justify-between items-baseline text-lg">
-                          <span className="font-semibold">Total Amount:</span>
-                          <span className="font-bold text-primary">Rs 2,500</span>
+                          <span className="font-semibold">{outstandingBill.description}</span>
+                          <span className="font-bold text-primary">Rs {outstandingBill.amount}</span>
                       </div>
                   </CardContent>
                   <CardFooter>
@@ -163,15 +195,19 @@ export default function TenantBillsPage() {
                           <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                               <Label htmlFor="name">Name</Label>
-                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                              <Input id="name" value={userName} disabled />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="flat">Flat No.</Label>
-                              <Input id="flat" value={flat} onChange={(e) => setFlat(e.target.value)} />
+                              <Input id="flat" value={userFlat} disabled />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="paymentFor">Payment For</Label>
-                              <Input id="paymentFor" value={paymentFor} onChange={(e) => setPaymentFor(e.target.value)} />
+                              <Input id="paymentFor" value={outstandingBill.description} disabled />
+                            </div>
+                            <div className="space-y-2">
+                               <Label htmlFor="amount">Amount</Label>
+                              <Input id="amount" value={`Rs ${outstandingBill.amount}`} disabled />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="screenshot">Upload Payment Screenshot</Label>
@@ -179,7 +215,7 @@ export default function TenantBillsPage() {
                             </div>
                           </div>
                           <DialogFooter>
-                            <Button type="submit" className="w-full" onClick={handleSubmit}>
+                            <Button type="submit" className="w-full" onClick={handleSubmitProof}>
                               <Upload className="mr-2 h-4 w-4" />
                               Submit for Verification
                             </Button>
@@ -189,6 +225,17 @@ export default function TenantBillsPage() {
                   </CardFooter>
               </Card>
           </div>
+        ) : (
+            <div className="md:col-span-1">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>No Outstanding Bills</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">All your bills are paid. Thank you!</p>
+                    </CardContent>
+                </Card>
+            </div>
         )}
       </div>
     </>

@@ -1,32 +1,98 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { billings } from "@/lib/mock-data";
+import { billings as mockBillings } from "@/lib/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, addDoc, onSnapshot, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+
+type Billing = {
+  id: string;
+  flat: string;
+  block: string;
+  status: 'Paid' | 'Pending Verification' | 'Due';
+};
 
 export default function BillingPage() {
+  const { db } = useFirebase();
   const { toast } = useToast();
+  const [billings, setBillings] = useState<Billing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!db) return;
+
+    // A simple representation of all apartments
+    const allApartments = [
+        { flat: "A-101", block: "A" }, { flat: "A-102", block: "A" },
+        { flat: "B-201", block: "B" }, { flat: "B-202", block: "B" },
+        { flat: "C-301", block: "C" }, { flat: "C-302", block: "C" },
+    ];
+
+    const unsubscribe = onSnapshot(collection(db, "bills"), (snapshot) => {
+        const billsData = new Map(snapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Billing]));
+        
+        const combinedBillings = allApartments.map(apt => {
+            const bill = billsData.get(apt.flat);
+            return {
+                id: apt.flat,
+                flat: apt.flat,
+                block: apt.block,
+                status: bill ? bill.status : 'Due',
+            };
+        });
+
+        setBillings(combinedBillings);
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+
+  }, [db]);
+
 
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'Paid': return 'default';
-      case 'Pending': return 'destructive';
-      case 'Due': return 'secondary';
+      case 'Pending Verification': return 'secondary';
+      case 'Due': return 'destructive';
       default: return 'outline';
     }
   };
 
-  const handleSendReminder = (flat: string) => {
-    toast({
-      title: "Reminder Sent!",
-      description: `A payment reminder has been sent to flat ${flat}.`,
-    });
+  const handleSendReminder = async (flat: string) => {
+    if (!db) {
+        toast({ title: "Database error", variant: "destructive" });
+        return;
+    }
+
+    try {
+        // This ensures a bill document exists for the tenant to see.
+        // If it already exists, this does nothing, which is fine.
+        const billRef = doc(db, "bills", flat);
+        await setDoc(billRef, {
+            flat: flat,
+            amount: 2500,
+            description: "Quarterly Maintenance Fee",
+            dueDate: "End of the Month",
+            status: "Due"
+        }, { merge: true });
+
+        toast({
+            title: "Reminder Sent!",
+            description: `A payment reminder has been sent to flat ${flat}.`,
+        });
+    } catch (error) {
+        console.error("Error sending reminder:", error);
+        toast({ title: "Failed to send reminder", variant: "destructive" });
+    }
   };
 
   return (
@@ -71,7 +137,7 @@ export default function BillingPage() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleSendReminder(billing.flat)}
-                      disabled={billing.status === 'Paid'}
+                      disabled={billing.status !== 'Due'}
                     >
                       Send Reminder
                     </Button>
