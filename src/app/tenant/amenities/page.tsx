@@ -23,6 +23,38 @@ type Amenity = {
   description: string;
 };
 
+const amenitiesData: Amenity[] = [
+  {
+    id: "1",
+    name: "Swimming Pool",
+    image: "https://picsum.photos/seed/pool/600/400",
+    dataAiHint: "swimming pool",
+    description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
+  },
+  {
+    id: "2",
+    name: "Party Hall",
+    image: "https://picsum.photos/seed/party/600/400",
+    dataAiHint: "party hall",
+    description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
+  },
+  {
+    id: "3",
+    name: "Badminton Court",
+    image: "https://picsum.photos/seed/badminton/600/400",
+    dataAiHint: "badminton court",
+    description: "A well-maintained indoor badminton court. Rackets and shuttles available."
+  },
+  {
+    id: "4",
+    name: "Gym",
+    image: "https://picsum.photos/seed/gym/600/400",
+    dataAiHint: "gym equipment",
+    description: "Fully equipped gymnasium with modern equipment for all your fitness needs."
+  }
+];
+
+
 export default function AmenitiesPage() {
   const { toast } = useToast();
   const [amenities, setAmenities] = useState<Amenity[]>([]);
@@ -34,24 +66,13 @@ export default function AmenitiesPage() {
 
   useEffect(() => {
     const fetchAmenities = async () => {
-      try {
-        const amenitiesCollection = collection(db, "amenities");
-        const amenitiesSnapshot = await getDocs(amenitiesCollection);
-        const amenitiesList = amenitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-        setAmenities(amenitiesList);
-      } catch (error) {
-        console.error("Error fetching amenities:", error);
-        toast({
-          title: "Error",
-          description: "Could not load amenities from the database.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      setIsLoading(true);
+      // Using mock data instead of Firestore for now
+      setAmenities(amenitiesData);
+      setIsLoading(false);
     };
     fetchAmenities();
-  }, [toast]);
+  }, []);
 
 
   const handleBooking = (amenity: Amenity) => {
@@ -60,28 +81,34 @@ export default function AmenitiesPage() {
   };
 
   const handleConfirmBooking = async () => {
-    if (selectedAmenity && selectedDate) {
-        try {
-            await addDoc(collection(db, "bookings"), {
-                amenityId: selectedAmenity.id,
-                amenityName: selectedAmenity.name,
-                bookingDate: Timestamp.fromDate(selectedDate),
-                status: "Confirmed",
-            });
-
-            toast({
-                title: "Booking Confirmed!",
-                description: `${selectedAmenity.name} has been booked for ${selectedDate.toLocaleDateString()}.`,
-            });
-        } catch (error) {
-             toast({
-                title: "Booking Failed",
-                description: "Could not save your booking.",
-                variant: "destructive",
-            });
-            console.error("Error adding booking: ", error);
-        }
+    if (!selectedAmenity || !selectedDate) {
+      toast({ title: "Please select a date.", variant: "destructive" });
+      return;
     }
+    
+    try {
+      await addDoc(collection(db, "bookings"), {
+        amenityId: selectedAmenity.id,
+        amenityName: selectedAmenity.name,
+        bookingDate: Timestamp.fromDate(selectedDate),
+        status: "Confirmed",
+        userName: "Guest", // Default to guest since login is not required
+        userFlat: "N/A"
+      });
+
+      toast({
+        title: "Booking Confirmed!",
+        description: `${selectedAmenity.name} has been booked for ${selectedDate.toLocaleDateString()}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Booking Failed",
+        description: "Could not save your booking.",
+        variant: "destructive",
+      });
+      console.error("Error adding booking: ", error);
+    }
+    
     setOpen(false);
   }
 
