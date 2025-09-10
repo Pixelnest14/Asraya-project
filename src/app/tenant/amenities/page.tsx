@@ -60,20 +60,12 @@ export default function AmenitiesPage() {
   };
 
   const handleConfirmBooking = async () => {
-    if (isAuthLoading) {
-      toast({ title: "Please wait...", variant: "destructive" });
-      return;
-    }
-    if (!user) {
-        toast({ title: "Please log in to book an amenity.", variant: "destructive" });
-        return;
-    }
     if (selectedAmenity && selectedDate) {
         try {
             await addDoc(collection(db, "bookings"), {
                 amenityId: selectedAmenity.id,
                 amenityName: selectedAmenity.name,
-                userId: user.uid,
+                userId: user?.uid, // Rely on Firestore rules for security
                 bookingDate: Timestamp.fromDate(selectedDate),
                 status: "Confirmed",
             });
@@ -85,7 +77,7 @@ export default function AmenitiesPage() {
         } catch (error) {
              toast({
                 title: "Booking Failed",
-                description: "Could not save your booking. Please try again.",
+                description: "Could not save your booking. You may need to be logged in.",
                 variant: "destructive",
             });
             console.error("Error adding booking: ", error);
@@ -136,7 +128,7 @@ export default function AmenitiesPage() {
                         <CardDescription>{amenity.description}</CardDescription>
                     </CardContent>
                     <CardFooter className="p-4 flex gap-2">
-                        <Button className="w-full" onClick={() => handleBooking(amenity)}>
+                        <Button className="w-full" onClick={() => handleBooking( amenity)}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             Book Now
                         </Button>

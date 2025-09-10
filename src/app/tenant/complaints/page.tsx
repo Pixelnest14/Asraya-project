@@ -67,14 +67,6 @@ export default function TenantComplaintsPage() {
   };
   
   const handleSubmit = async () => {
-    if (isAuthLoading) {
-        toast({ title: "Please wait", description: "Verifying authentication status...", variant: "destructive" });
-        return;
-    }
-    if (!currentUser) {
-      toast({ title: "Please log in to file a complaint.", variant: "destructive" });
-      return;
-    }
     if (!category || !description) {
         toast({ title: "Please fill out all fields.", variant: "destructive" });
         return;
@@ -86,8 +78,8 @@ export default function TenantComplaintsPage() {
         description,
         date: Timestamp.now(),
         status: "New",
-        userId: currentUser.uid,
-        userName: currentUser.displayName || currentUser.email,
+        userId: currentUser?.uid, // Rely on Firestore rules for security
+        userName: currentUser?.displayName || currentUser?.email,
         userFlat: "A-101" // This should be fetched from user profile in a real app
       });
 
@@ -101,7 +93,7 @@ export default function TenantComplaintsPage() {
     } catch (error) {
        toast({
           title: "Error",
-          description: "There was an error submitting your complaint.",
+          description: "There was an error submitting your complaint. You may need to be logged in.",
           variant: "destructive"
       });
       console.error("Error adding document: ", error);
