@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
 import { signInAnonymously, updateProfile } from 'firebase/auth';
+import { firebaseConfig } from '@/lib/firebase';
 
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
@@ -24,17 +25,26 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
+    // If we're using placeholder credentials, just navigate to the correct page.
+    if (firebaseConfig.apiKey === 'your-api-key') {
+      toast({ title: 'Login Successful (Prototype Mode)!' });
+      router.push(`/${role}`);
+      setIsLoading(false);
+      return;
+    }
+
     if (isAuthLoading || !auth) {
       toast({
         title: "Authentication service is not ready",
         description: "Please wait a moment and try again.",
         variant: "destructive"
       });
+      setIsLoading(false);
       return;
     }
     
-    setIsLoading(true);
-
     try {
       // For prototype purposes, we'll use anonymous sign-in and just set the display name.
       const userCredential = await signInAnonymously(auth);
