@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment, query, orderBy } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type PollOption = {
@@ -39,16 +39,21 @@ export default function TenantVotingPage() {
     useEffect(() => {
         if (!db) return;
         setIsLoading(true);
-        const unsubscribe = onSnapshot(collection(db, "polls"), (snapshot) => {
+        const pollsQuery = query(collection(db, "polls"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(pollsQuery, (snapshot) => {
             const pollsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
             setPolls(pollsData);
             setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching polls: ", error);
+            toast({ title: "Error", description: "Could not fetch polls.", variant: "destructive" });
+            setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [db]);
+    }, [db, toast]);
 
     useEffect(() => {
-        if (!user || polls.length === 0) return;
+        if (!user || isAuthLoading || polls.length === 0) return;
 
         const checkIfVoted = async () => {
             if (!db) return;
@@ -63,7 +68,7 @@ export default function TenantVotingPage() {
             setVotedPolls(newVotedPolls);
         };
         checkIfVoted();
-    }, [user, polls, db]);
+    }, [user, isAuthLoading, polls, db]);
 
     const handleVote = async (pollId: string) => {
         if (!user) {
@@ -92,9 +97,9 @@ export default function TenantVotingPage() {
             if(poll) {
                 const optionIndex = poll.options.findIndex(opt => opt.text === selectedOption);
                 if(optionIndex > -1) {
-                    // This is a "hacky" way to update an array element in Firestore
-                    // A better way would be a cloud function to handle this transactionally
-                    // For this prototype, this is acceptable.
+                    // Firestore does not support directly incrementing a value in an array.
+                    // A transaction or a Cloud Function is the robust way to handle this to
+                    // prevent race conditions. For this prototype, we'll read and then write.
                     const newOptions = [...poll.options];
                     newOptions[optionIndex].votes = (newOptions[optionIndex].votes || 0) + 1;
                     
@@ -122,11 +127,11 @@ export default function TenantVotingPage() {
                 title="Community Voting"
                 description="Participate in community polls and make your voice heard."
             />
-            {isLoading ? (
+            {isLoading || isAuthLoading ? (
                  <div className="grid gap-6 md:grid-cols-2">
                     {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
                  </div>
-            ) : (
+            ) : polls.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2">
                     {polls.map((poll) => {
                         const hasVoted = votedPolls.includes(poll.id);
@@ -182,6 +187,12 @@ export default function TenantVotingPage() {
                         )
                     })}
                 </div>
+            ) : (
+                <Card>
+                    <CardContent className="p-8 text-center text-muted-foreground">
+                        There are no active polls at the moment.
+                    </CardContent>
+                </Card>
             )}
         </>
     );

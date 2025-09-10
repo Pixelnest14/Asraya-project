@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, RefreshCw, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PollOption = {
   text: string;
@@ -41,13 +42,18 @@ export default function AdminVotingPage() {
     useEffect(() => {
         if (!db) return;
         setIsLoading(true);
-        const unsubscribe = onSnapshot(collection(db, "polls"), (snapshot) => {
+        const pollsQuery = query(collection(db, "polls"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(pollsQuery, (snapshot) => {
             const pollsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
             setPolls(pollsData);
             setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching polls: ", error);
+            toast({ title: "Error fetching polls", variant: "destructive" });
+            setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [db]);
+    }, [db, toast]);
 
     const handleOptionChange = (index: number, value: string) => {
         const newOptions = [...options];
@@ -184,7 +190,13 @@ export default function AdminVotingPage() {
                         <CardDescription>View and manage existing polls.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {isLoading ? <p>Loading polls...</p> : polls.map((poll) => (
+                        {isLoading ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-32" />
+                                <Skeleton className="h-32" />
+                            </div>
+                        ) : polls.length > 0 ? (
+                            polls.map((poll) => (
                             <div key={poll.id} className="p-4 rounded-lg border bg-muted/30">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
@@ -200,7 +212,7 @@ export default function AdminVotingPage() {
                                             onClick={() => handleToggleStatus(poll.id, poll.status)}
                                             className="gap-1"
                                         >
-                                            {poll.status === 'Active' ? <XCircle /> : <RefreshCw />}
+                                            {poll.status === 'Active' ? <XCircle className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
                                             {poll.status === 'Active' ? 'Close' : 'Re-open'}
                                         </Button>
                                         <Button variant="destructive" size="icon" onClick={() => handleDeletePoll(poll.id)}>
@@ -223,7 +235,10 @@ export default function AdminVotingPage() {
                                     })}
                                 </div>
                             </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-4">No polls have been created yet.</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>
