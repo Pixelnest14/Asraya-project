@@ -1,4 +1,5 @@
 
+
 export const dashboardStats = {
   totalApartments: 120,
   residentCount: 350,
@@ -51,7 +52,8 @@ export const billings = [
     { flat: "C-302", block: "C", status: "Paid" },
 ];
 
-export const parkingSlots = [
+// Renamed for clarity to avoid conflict with live data
+export const initialParkingSlots = [
   { id: 'A1', status: 'Occupied', allottedTo: 'A-101' },
   { id: 'A2', status: 'Allotted', allottedTo: 'A-102' },
   { id: 'A3', status: 'Available', allottedTo: null },
