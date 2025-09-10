@@ -44,7 +44,18 @@ export default function AdminVotingPage() {
         setIsLoading(true);
         const pollsQuery = query(collection(db, "polls"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(pollsQuery, (snapshot) => {
-            const pollsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+            const pollsData = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    question: data.question,
+                    status: data.status,
+                    // Ensure options and totalVotes have default values if they are missing
+                    options: data.options || [],
+                    totalVotes: data.totalVotes || 0,
+                    createdAt: data.createdAt
+                } as Poll;
+            });
             setPolls(pollsData);
             setIsLoading(false);
         }, (error) => {
@@ -76,7 +87,10 @@ export default function AdminVotingPage() {
     };
 
     const handleCreatePoll = async () => {
-        if (!db) return;
+        if (!db) {
+            toast({ title: "Database connection not available.", variant: "destructive" });
+            return;
+        }
         if (!question.trim()) {
             toast({ title: "Please enter a poll question.", variant: "destructive" });
             return;
