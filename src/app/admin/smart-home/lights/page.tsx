@@ -21,11 +21,11 @@ type LightZone = {
 
 const initialLightZones: Omit<LightZone, 'id'>[] = [
     { name: "Lobby & Entrance", status: "On", icon: "Lightbulb" },
-    { name: "Corridors - Block A", status: "Off", icon: "Lightbulb" },
-    { name: "Corridors - Block B", status: "On", icon: "Lightbulb" },
-    { name: "Garden & Pathway", status: "On (Auto)", icon: "Lightbulb" },
-    { name: "Clubhouse Exterior", status: "Off", icon: "Lightbulb" },
-    { name: "Parking Lot", status: "On (Auto)", icon: "Lightbulb" },
+    { name: "Garden Area", status: "On (Auto)", icon: "Lightbulb" },
+    { name: "1st Floor Corridor", status: "Off", icon: "Lightbulb" },
+    { name: "2nd Floor Corridor", status: "On", icon: "Lightbulb" },
+    { name: "3rd Floor Corridor", status: "Off", icon: "Lightbulb" },
+    { name: "Parking Area", status: "On (Auto)", icon: "Lightbulb" },
 ];
 
 export default function SmartLightsPage() {
