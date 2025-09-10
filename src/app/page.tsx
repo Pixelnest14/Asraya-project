@@ -128,16 +128,20 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
-                <GoogleIcon className="mr-2 h-5 w-5" />
-                Sign in with Google
-            </Button>
+            {role === 'tenant' && (
+              <>
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
+                    <GoogleIcon className="mr-2 h-5 w-5" />
+                    Sign in with Google
+                </Button>
 
-            <div className="flex items-center space-x-2">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">OR</span>
-                <Separator className="flex-1" />
-            </div>
+                <div className="flex items-center space-x-2">
+                    <Separator className="flex-1" />
+                    <span className="text-xs text-muted-foreground">OR</span>
+                    <Separator className="flex-1" />
+                </div>
+              </>
+            )}
             
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
