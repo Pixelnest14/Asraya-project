@@ -243,63 +243,65 @@ export default function AdminVotingPage() {
                 </Card>
 
                 {/* Polls Overview */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Polls Overview</CardTitle>
-                        <CardDescription>View and manage existing polls.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {isLoading ? (
-                            <div className="space-y-4">
-                                <Skeleton className="h-32" />
-                                <Skeleton className="h-32" />
-                            </div>
-                        ) : polls.length > 0 ? (
-                            polls.map((poll) => (
-                            <div key={poll.id} className="p-4 rounded-lg border bg-muted/30">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h4 className="font-semibold font-headline">{poll.question}</h4>
-                                        <div className="text-sm">
-                                            Status: <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Polls Overview</CardTitle>
+                            <CardDescription>View and manage existing polls.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6 max-h-[600px] overflow-y-auto">
+                            {isLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-32" />
+                                    <Skeleton className="h-32" />
+                                </div>
+                            ) : polls.length > 0 ? (
+                                polls.map((poll) => (
+                                <div key={poll.id} className="p-4 rounded-lg border bg-muted/30 mb-4">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 className="font-semibold font-headline">{poll.question}</h4>
+                                            <div className="text-sm">
+                                                Status: <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button 
+                                                variant="outline"
+                                                size="sm" 
+                                                onClick={() => handleToggleStatus(poll.id, poll.status)}
+                                                className="gap-1"
+                                            >
+                                                {poll.status === 'Active' ? <XCircle className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
+                                                {poll.status === 'Active' ? 'Close' : 'Re-open'}
+                                            </Button>
+                                            <Button variant="destructive" size="icon" onClick={() => handleDeletePoll(poll.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button 
-                                            variant="outline"
-                                            size="sm" 
-                                            onClick={() => handleToggleStatus(poll.id, poll.status)}
-                                            className="gap-1"
-                                        >
-                                            {poll.status === 'Active' ? <XCircle className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
-                                            {poll.status === 'Active' ? 'Close' : 'Re-open'}
-                                        </Button>
-                                        <Button variant="destructive" size="icon" onClick={() => handleDeletePoll(poll.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                    <div className="space-y-3">
+                                        {poll.options.map((option, index) => {
+                                            const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+                                            return (
+                                                <div key={index} className="space-y-1">
+                                                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                                        <span>{option.text}</span>
+                                                        <span className="font-medium text-foreground">{percentage.toFixed(0)}% ({option.votes} votes)</span>
+                                                    </div>
+                                                    <Progress value={percentage} className="h-2" />
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
-                                <div className="space-y-3">
-                                    {poll.options.map((option, index) => {
-                                        const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
-                                        return (
-                                            <div key={index} className="space-y-1">
-                                                <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                                    <span>{option.text}</span>
-                                                    <span className="font-medium text-foreground">{percentage.toFixed(0)}% ({option.votes} votes)</span>
-                                                </div>
-                                                <Progress value={percentage} className="h-2" />
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-muted-foreground py-4">No polls have been created yet.</p>
-                        )}
-                    </CardContent>
-                </Card>
+                                ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-4">No polls have been created yet.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </>
     );
