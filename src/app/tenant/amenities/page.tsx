@@ -10,9 +10,9 @@ import { Calendar as CalendarIcon, LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Amenity = {
@@ -30,7 +30,7 @@ export default function AmenitiesPage() {
   const [selectedAmenity, setSelectedAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
-  const [user] = useAuthState(auth);
+  const { user, isLoading: isAuthLoading } = useFirebase();
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -60,6 +60,10 @@ export default function AmenitiesPage() {
   };
 
   const handleConfirmBooking = async () => {
+    if (isAuthLoading) {
+      toast({ title: "Please wait...", variant: "destructive" });
+      return;
+    }
     if (!user) {
         toast({ title: "Please log in to book an amenity.", variant: "destructive" });
         return;

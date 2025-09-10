@@ -35,7 +35,7 @@ export default function TenantComplaintsPage() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (isAuthLoading || !currentUser) return;
 
     const q = query(collection(db, "complaints"), where("userId", "==", currentUser.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -55,7 +55,7 @@ export default function TenantComplaintsPage() {
     });
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, isAuthLoading]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -67,7 +67,10 @@ export default function TenantComplaintsPage() {
   };
   
   const handleSubmit = async () => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) {
+        toast({ title: "Please wait", description: "Verifying authentication status...", variant: "destructive" });
+        return;
+    }
     if (!currentUser) {
       toast({ title: "Please log in to file a complaint.", variant: "destructive" });
       return;
@@ -179,7 +182,11 @@ export default function TenantComplaintsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {complaints.length > 0 ? (
+              {isAuthLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">Loading complaints...</TableCell>
+                </TableRow>
+              ) : complaints.length > 0 ? (
                 complaints.map((complaint) => (
                   <TableRow key={complaint.id}>
                     <TableCell className="font-mono">{complaint.id.substring(0, 6)}...</TableCell>
