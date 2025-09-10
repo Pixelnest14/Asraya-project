@@ -37,6 +37,14 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) {
+      toast({
+        title: 'Email is required',
+        description: 'Please enter your email address to log in.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setIsLoading(true);
 
     // If we're using placeholder credentials, just navigate to the correct page.
@@ -158,16 +166,16 @@ export default function LoginPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="user-id">Email (Optional)</Label>
+                <Label htmlFor="user-id">Email</Label>
                 <Input 
                   id="user-id" 
                   type="email"
-                  placeholder="Enter any email for display" 
+                  placeholder="Enter your email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isFormDisabled}
+                  required
                 />
-                 <p className="text-xs text-muted-foreground">Hint: This is a prototype. Just select a role and log in.</p>
               </div>
               <Button type="submit" className="w-full" disabled={isFormDisabled}>
                 {isLoading || isAuthLoading ? 'Please wait...' : 'Login'}
