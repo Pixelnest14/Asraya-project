@@ -58,14 +58,20 @@ export const initialParkingSlots = [
   { id: 'A2', status: 'Allotted', allottedTo: 'A-102' },
   { id: 'A3', status: 'Available', allottedTo: null },
   { id: 'A4', status: 'Available', allottedTo: null },
+  { id: 'A5', status: 'Available', allottedTo: null },
+  { id: 'A6', status: 'Occupied', allottedTo: 'A-201' },
   { id: 'B1', status: 'Occupied', allottedTo: 'B-201' },
   { id: 'B2', status: 'Available', allottedTo: null },
   { id: 'B3', status: 'Occupied', allottedTo: 'B-202' },
   { id: 'B4', status: 'Allotted', allottedTo: 'B-204' },
+  { id: 'B5', status: 'Available', allottedTo: null },
+  { id: 'B6', status: 'Available', allottedTo: null },
   { id: 'C1', status: 'Allotted', allottedTo: 'C-301' },
   { id: 'C2', status: 'Available', allottedTo: null },
   { id: 'C3', status: 'Occupied', allottedTo: 'C-302' },
   { id: 'C4', status: 'Available', allottedTo: null },
+  { id: 'C5', status: 'Allotted', allottedTo: 'C-401' },
+  { id: 'C6', status: 'Available', allottedTo: null },
 ];
 
 
