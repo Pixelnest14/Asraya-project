@@ -27,10 +27,13 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
+const ADMIN_PASSWORD = "admin"; // Prototype admin password
+
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
   const [role, setRole] = useState('tenant');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -45,6 +48,15 @@ export default function LoginPage() {
       });
       return;
     }
+
+    if (role === 'admin' && password !== ADMIN_PASSWORD) {
+        toast({
+            title: 'Incorrect Admin Password',
+            variant: 'destructive',
+        });
+        return;
+    }
+    
     setIsLoading(true);
 
     // If we're using placeholder credentials, just navigate to the correct page.
@@ -177,6 +189,22 @@ export default function LoginPage() {
                   required
                 />
               </div>
+
+               {role === 'admin' && (
+                <div className="space-y-2">
+                    <Label htmlFor="password">Admin Password</Label>
+                    <Input 
+                    id="password" 
+                    type="password"
+                    placeholder="Enter admin password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isFormDisabled}
+                    required
+                    />
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={isFormDisabled}>
                 {isLoading || isAuthLoading ? 'Please wait...' : 'Login'}
               </Button>

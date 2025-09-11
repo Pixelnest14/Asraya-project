@@ -8,7 +8,7 @@ import { CreditCard, Wrench, Package, Shield, CalendarDays, Megaphone } from "lu
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, query, where, onSnapshot, orderBy, limit, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, limit, Timestamp, doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
@@ -26,7 +26,7 @@ type CommunityEvent = {
 };
 
 export default function TenantDashboard() {
-    const { db, user } = useFirebase();
+    const { db, user, isLoading: isAuthLoading } = useFirebase();
     
     // State for dashboard cards
     const [outstandingDues, setOutstandingDues] = useState<string | null>(null);
@@ -37,55 +37,64 @@ export default function TenantDashboard() {
     const [events, setEvents] = useState<CommunityEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const userFlat = "A-101"; // Example user data
+    // In a real app, this would be fetched from the user's profile
+    const userFlat = "A-101";
 
     useEffect(() => {
-        if (!db || !user) return;
+        if (isAuthLoading) return;
         setIsLoading(true);
 
-        // Fetch outstanding dues
-        const billRef = doc(db, "bills", userFlat);
-        const unsubDues = onSnapshot(billRef, (doc) => {
-            if (doc.exists() && doc.data().status === 'Due') {
-                setOutstandingDues(`Rs ${doc.data().amount}`);
-            } else {
-                setOutstandingDues("Rs 0");
-            }
-        });
-        
-        // Fetch active complaints count
-        const complaintsQuery = query(collection(db, "complaints"), where("userId", "==", user.uid), where("status", "in", ["New", "In Progress"]));
-        const unsubComplaints = onSnapshot(complaintsQuery, (snapshot) => {
-            setActiveComplaints(snapshot.size);
-        });
+        const subscriptions: (() => void)[] = [];
 
-        // Fetch latest announcements
-        const announcementsQuery = query(collection(db, "notices"), orderBy("createdAt", "desc"), limit(2));
-        const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => {
-            setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
-        });
+        if (db) {
+            // Fetch latest announcements
+            const announcementsQuery = query(collection(db, "notices"), orderBy("createdAt", "desc"), limit(2));
+            subscriptions.push(onSnapshot(announcementsQuery, (snapshot) => {
+                setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
+            }));
 
-        // Fetch upcoming events
-        const eventsQuery = query(collection(db, "events"), orderBy("date", "asc"), limit(2));
-        const unsubEvents = onSnapshot(eventsQuery, (snapshot) => {
-            setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityEvent)));
-        });
+            // Fetch upcoming events
+            const eventsQuery = query(collection(db, "events"), orderBy("date", "asc"), limit(2));
+            subscriptions.push(onSnapshot(eventsQuery, (snapshot) => {
+                setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityEvent)));
+            }));
+        }
 
-        const timer = setTimeout(() => setIsLoading(false), 1000); // Prevent flicker
+        if (db && user) {
+            // Fetch outstanding dues for the logged-in user
+            // We use a mock flat number here, but in a real app this would come from the user's profile
+            const billRef = doc(db, "bills", userFlat);
+            subscriptions.push(onSnapshot(billRef, (doc) => {
+                if (doc.exists() && doc.data().status === 'Due') {
+                    setOutstandingDues(`Rs ${doc.data().amount}`);
+                } else {
+                    setOutstandingDues("Rs 0");
+                }
+            }));
+            
+            // Fetch active complaints count for the logged-in user
+            const complaintsQuery = query(collection(db, "complaints"), where("userId", "==", user.uid), where("status", "in", ["New", "In Progress"]));
+            subscriptions.push(onSnapshot(complaintsQuery, (snapshot) => {
+                setActiveComplaints(snapshot.size);
+            }));
+        } else {
+            // Set default values if not logged in
+            setOutstandingDues("Rs 0");
+            setActiveComplaints(0);
+        }
+
+        const timer = setTimeout(() => setIsLoading(false), 1200); // Prevent flicker
+        subscriptions.push(() => clearTimeout(timer));
 
         return () => {
-            unsubDues();
-            unsubComplaints();
-            unsubAnnouncements();
-            unsubEvents();
-            clearTimeout(timer);
+            subscriptions.forEach(unsub => unsub());
         };
 
-    }, [db, user, userFlat]);
+    }, [db, user, isAuthLoading, userFlat]);
 
   return (
     <>
-      <PageHeader title="My Dashboard" description="Your personalized summary of society life." />
+      <PageHeader title={user ? `${user.displayName || 'Tenant'}'s Dashboard` : "My Dashboard"} description="Your personalized summary of society life." />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Outstanding Dues" value={outstandingDues ?? <Skeleton className="h-6 w-24" />} icon={CreditCard} />
         <StatCard title="Active Complaints" value={activeComplaints ?? <Skeleton className="h-6 w-10" />} icon={Wrench} />
