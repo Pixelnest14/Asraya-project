@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, doc, deleteDoc, getDocs, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc, getDocs, addDoc, Timestamp } from "firebase/firestore";
 import { marketplaceItems as initialMarketplaceItems } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +38,7 @@ export default function AdminMarketplacePage() {
                 const snapshot = await getDocs(marketplaceCollection);
                 if (snapshot.empty) {
                     for (const item of initialMarketplaceItems) {
-                        await addDoc(marketplaceCollection, item);
+                        await addDoc(marketplaceCollection, {...item, createdAt: Timestamp.now()});
                     }
                 }
             } catch (error) {

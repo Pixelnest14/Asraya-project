@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, Timestamp } from "firebase/firestore";
+import { useFirebase } from "@/components/firebase-provider";
+import { collection, addDoc, onSnapshot, Timestamp, query, orderBy } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type MarketplaceItem = {
@@ -29,6 +29,7 @@ type MarketplaceItem = {
 
 export default function TenantMarketplacePage() {
     const { toast } = useToast();
+    const { db } = useFirebase();
     const [items, setItems] = useState<MarketplaceItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [postItemOpen, setPostItemOpen] = useState(false);
@@ -42,28 +43,30 @@ export default function TenantMarketplacePage() {
     const [sellerName, setSellerName] = useState("");
 
 
-    const fetchItems = async () => {
+    useEffect(() => {
+        if (!db) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
-        try {
-            const marketplaceCollection = collection(db, "marketplace");
-            const itemsSnapshot = await getDocs(marketplaceCollection);
-            const itemsList = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MarketplaceItem));
+        const q = query(collection(db, "marketplace"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const itemsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MarketplaceItem));
             setItems(itemsList);
-        } catch (error) {
+            setIsLoading(false);
+        }, (error) => {
             console.error("Error fetching marketplace items:", error);
             toast({
                 title: "Error",
                 description: "Could not load marketplace items.",
                 variant: "destructive",
             });
-        } finally {
             setIsLoading(false);
-        }
-    };
+        });
 
-    useEffect(() => {
-        fetchItems();
-    }, []);
+        return () => unsubscribe();
+    }, [db, toast]);
 
     const handleContact = (item: MarketplaceItem) => {
         const sellerInfo = { name: item.seller, phone: "987-654-3210" };
@@ -80,6 +83,7 @@ export default function TenantMarketplacePage() {
             });
             return;
         }
+        if (!db) return;
 
         try {
             await addDoc(collection(db, "marketplace"), {
@@ -103,8 +107,6 @@ export default function TenantMarketplacePage() {
             setCategory("");
             setCost("");
             setSellerName("");
-            // Refresh items
-            fetchItems();
         } catch (error) {
             console.error("Error posting item:", error);
             toast({

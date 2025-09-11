@@ -1,3 +1,4 @@
+
 import type { FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -16,22 +17,9 @@ export const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "your-app-id"
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firebase only if it hasn't been initialized yet.
-if (getApps().length === 0) {
-  // Basic check to see if the config is just placeholders
-  if (firebaseConfig.apiKey === "your-api-key") {
-    console.warn("Using placeholder Firebase config. Please update src/lib/firebase.ts with your project's credentials.");
-  }
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-auth = getAuth(app);
-db = getFirestore(app);
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 
 export { app, auth, db };
