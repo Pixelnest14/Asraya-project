@@ -58,16 +58,6 @@ export const initialParkingSlots = [
   { id: 'C6', status: 'Available', allottedTo: null },
 ];
 
-export const tenantRentStatus = [
-  { tenant: "Priya Sharma", property: "A-101", status: "Paid" },
-  { tenant: "John Doe", property: "B-202", status: "Pending" },
-];
-
-export const myTenants = [
-    { name: "Priya Sharma", status: "Active", property: "A-101" },
-    { name: "Suresh Gupta", status: "Inactive", property: "D-405" },
-];
-
 export const initialEvents = [
     {
         title: "Annual General Meeting",

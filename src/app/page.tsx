@@ -172,7 +172,6 @@ export default function LoginPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="tenant">Tenant</SelectItem>
-                    <SelectItem value="owner">Owner</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>

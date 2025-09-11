@@ -38,17 +38,3 @@ export const tenantNavItems: NavItem[] = [
   { label: "AI Assistant", href: "/tenant/chatbot", icon: "Bot" },
   { label: "Smart Home", href: "/tenant/smart-home", icon: "Home" },
 ];
-
-export const ownerNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/owner/dashboard", icon: "LayoutDashboard" },
-  { label: "Billings", href: "/owner/bills", icon: "CreditCard" },
-  { label: "Complaints", href: "/owner/complaints", icon: "Wrench" },
-  { label: "Notice Board", href: "/owner/community", icon: "Megaphone" },
-  { label: "Book Amenities", href: "/owner/amenities", icon: "CalendarDays" },
-  { label: "Parking", href: "/owner/parking", icon: "Car" },
-  { label: "Voting", href: "/owner/voting", icon: "Vote" },
-  { label: "Marketplace", href: "/owner/marketplace", icon: "ShoppingCart" },
-  { label: "Emergency", href: "/owner/emergency-alert", icon: "ShieldAlert" },
-  { label: "AI Assistant", href: "/owner/chatbot", icon: "Bot" },
-  { label: "Smart Home", href: "/owner/smart-home", icon: "Home" },
-];
