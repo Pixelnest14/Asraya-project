@@ -9,12 +9,12 @@ import { initializeApp, getApps, getApp, FirebaseOptions } from "firebase/app";
 // To use your own Firebase project, replace these values with the ones
 // from your Firebase project's settings.
 export const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "your-api-key",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "your-auth-domain",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "your-project-id",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "your-storage-bucket",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "your-messaging-sender-id",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "your-app-id"
+  projectId: "asraya-society-hub-5ycb3",
+  appId: "1:155221697037:web:5aa3356f354e79853e6b44",
+  storageBucket: "asraya-society-hub-5ycb3.firebasestorage.app",
+  apiKey: "AIzaSyB1gSdbomqvmuK7I4lpnHjSLCDSrcTUhto",
+  authDomain: "asraya-society-hub-5ycb3.firebaseapp.com",
+  messagingSenderId: "155221697037"
 };
 
 const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
