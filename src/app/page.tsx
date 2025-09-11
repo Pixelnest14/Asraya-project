@@ -37,7 +37,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-const ADMIN_PASSWORD = "admin"; // Prototype admin password
+const ADMIN_PASSWORD = "admin123"; // Prototype admin password
 
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
