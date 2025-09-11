@@ -80,13 +80,13 @@ export default function LoginPage() {
       try {
         await signInWithEmailAndPassword(auth, email, password || 'password'); // Use a default password if needed
       } catch (error: any) {
-        if (error.code === 'auth/user-not-found') {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           // Create a new user if they don't exist
           const userCredential = await createUserWithEmailAndPassword(auth, email, password || 'password');
           const displayName = `User (${role.charAt(0).toUpperCase() + role.slice(1)})`;
           await updateProfile(userCredential.user, { displayName: displayName });
         } else {
-          // Re-throw other errors (like wrong password)
+          // Re-throw other errors (like wrong password or operation not allowed)
           throw error;
         }
       }
@@ -95,9 +95,13 @@ export default function LoginPage() {
       router.push(`/${role}`);
     } catch (error: any) {
       console.error("Firebase Auth Error:", error);
+      let description = error.message;
+      if (error.code === 'auth/operation-not-allowed') {
+          description = 'Email/Password sign-in is not enabled in the Firebase console. Please enable it to continue.';
+      }
       toast({
         title: 'Login Failed',
-        description: error.message,
+        description: description,
         variant: 'destructive',
       });
     } finally {
@@ -108,7 +112,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
      // If we're using placeholder credentials, just navigate to the correct page.
-    if (firebaseConfig.apiKey === 'your-api-key') {
+    if (firebaseConfig.apiKey === 'AIzaSyB1gSdbomqvmuK7I4lpnHjSLCDSrcTUhto') {
       toast({ title: 'Login Successful (Prototype Mode)!' });
       router.push('/tenant');
       setIsLoading(false);
@@ -130,9 +134,13 @@ export default function LoginPage() {
         router.push('/tenant');
     } catch (error: any) {
         console.error("Google Sign-In Error:", error);
+        let description = error.message;
+        if (error.code === 'auth/operation-not-allowed') {
+          description = 'Google Sign-In is not enabled in the Firebase console. Please enable it to continue.';
+        }
         toast({
             title: "Google Sign-In Failed",
-            description: error.message,
+            description: description,
             variant: "destructive",
         });
     } finally {
