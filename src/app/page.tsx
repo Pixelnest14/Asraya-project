@@ -22,6 +22,9 @@ import {
 } from 'firebase/auth';
 import { firebaseConfig } from '@/lib/firebase';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -43,11 +46,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (!email) {
       toast({
         title: 'Email is required',
@@ -67,10 +73,7 @@ export default function LoginPage() {
     }
 
     if (role === 'admin' && password !== ADMIN_PASSWORD) {
-        toast({
-            title: 'Incorrect Admin Password',
-            variant: 'destructive',
-        });
+        setError('Incorrect Admin Password');
         return;
     }
     
@@ -86,7 +89,6 @@ export default function LoginPage() {
       return;
     }
     
-    // For tenants, we use a default long password. For admin, we use the provided one.
     const effectivePassword = role === 'tenant' ? 'password123' : password;
 
     try {
@@ -101,7 +103,6 @@ export default function LoginPage() {
         }
       }
 
-      // Ensure display name is updated for existing users too
       if (auth.currentUser && auth.currentUser.displayName !== name && role === 'tenant') {
           await updateProfile(auth.currentUser, { displayName: name });
       }
@@ -240,15 +241,23 @@ export default function LoginPage() {
                 <div className="space-y-2">
                     <Label htmlFor="password">Admin Password</Label>
                     <Input 
-                    id="password" 
-                    type="password"
-                    placeholder="Enter admin password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isFormDisabled}
-                    required
+                        id="password" 
+                        type="password"
+                        placeholder="Enter admin password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isFormDisabled}
+                        required
+                        className={cn(error && "border-destructive")}
                     />
                 </div>
+              )}
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
               <Button type="submit" className="w-full" disabled={isFormDisabled}>
