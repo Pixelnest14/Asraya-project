@@ -12,7 +12,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
-import { signInAnonymously, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    updateProfile, 
+    GoogleAuthProvider, 
+    signInWithPopup 
+} from 'firebase/auth';
 import { firebaseConfig } from '@/lib/firebase';
 import { Separator } from '@/components/ui/separator';
 
@@ -59,14 +65,6 @@ export default function LoginPage() {
     
     setIsLoading(true);
 
-    // If we're using placeholder credentials, just navigate to the correct page.
-    if (firebaseConfig.apiKey === 'your-api-key') {
-      toast({ title: 'Login Successful (Prototype Mode)!' });
-      router.push(`/${role}`);
-      setIsLoading(false);
-      return;
-    }
-
     if (isAuthLoading || !auth) {
       toast({
         title: "Authentication service is not ready",
@@ -78,12 +76,20 @@ export default function LoginPage() {
     }
     
     try {
-      // For prototype purposes, we'll use anonymous sign-in and just set the display name.
-      const userCredential = await signInAnonymously(auth);
-      
-      // We can use the role and a mock name for display purposes
-      const displayName = `User (${role.charAt(0).toUpperCase() + role.slice(1)})`;
-      await updateProfile(userCredential.user, { displayName: displayName });
+      // Try to sign in. If it fails because the user doesn't exist, create a new user.
+      try {
+        await signInWithEmailAndPassword(auth, email, password || 'password'); // Use a default password if needed
+      } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+          // Create a new user if they don't exist
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password || 'password');
+          const displayName = `User (${role.charAt(0).toUpperCase() + role.slice(1)})`;
+          await updateProfile(userCredential.user, { displayName: displayName });
+        } else {
+          // Re-throw other errors (like wrong password)
+          throw error;
+        }
+      }
 
       toast({ title: 'Login Successful!' });
       router.push(`/${role}`);
