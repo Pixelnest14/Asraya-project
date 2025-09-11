@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, setDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, setDoc, doc, Timestamp } from "firebase/firestore";
 
 type Billing = {
   id: string;
@@ -83,7 +83,8 @@ export default function BillingPage() {
             amount: 2500,
             description: "Quarterly Maintenance Fee",
             dueDate: "End of the Month",
-            status: "Due"
+            status: "Due",
+            lastReminderSent: Timestamp.now(),
         }, { merge: true }); // Use merge to avoid overwriting other fields if they exist
 
         toast({
