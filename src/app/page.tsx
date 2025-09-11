@@ -114,7 +114,7 @@ export default function LoginPage() {
       if (error.code === 'auth/operation-not-allowed') {
           description = 'Email/Password sign-in is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method to continue.';
       } else if (error.code === 'auth/weak-password') {
-          description = 'The default password is too weak. This is a bug in the prototype.';
+          description = `The password must be at least 6 characters long. The effective password was: '${effectivePassword}'`;
       } else if (error.message) {
           description = error.message;
       }
