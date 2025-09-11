@@ -206,6 +206,7 @@ export default function LoginPage() {
                   <SelectContent>
                     <SelectItem value="tenant">Tenant</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -288,4 +289,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
