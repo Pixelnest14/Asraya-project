@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, getDoc, updateDoc, increment, query, orderBy, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type PollOption = {
@@ -25,6 +25,7 @@ type Poll = {
   status: 'Active' | 'Closed';
   options: PollOption[];
   totalVotes: number;
+  createdAt: Timestamp;
 };
 
 export default function TenantVotingPage() {
@@ -80,8 +81,8 @@ export default function TenantVotingPage() {
             return;
         }
 
-        const selectedOption = selectedOptions[pollId];
-        if (!selectedOption) {
+        const selectedOptionText = selectedOptions[pollId];
+        if (!selectedOptionText) {
             toast({ title: "Please select an option to vote.", variant: "destructive" });
             return;
         }
@@ -90,34 +91,45 @@ export default function TenantVotingPage() {
         const voteRef = doc(pollRef, "votes", user.uid);
 
         try {
-            // Record the user's vote to prevent re-voting
-            await setDoc(voteRef, { option: selectedOption });
-
-            const poll = polls.find(p => p.id === pollId);
-            if(poll) {
-                const optionIndex = poll.options.findIndex(opt => opt.text === selectedOption);
-                if(optionIndex > -1) {
-                    // Firestore does not support directly incrementing a value in an array.
-                    // A transaction or a Cloud Function is the robust way to handle this to
-                    // prevent race conditions. For this prototype, we'll read and then write.
-                    const newOptions = [...poll.options];
-                    newOptions[optionIndex].votes = (newOptions[optionIndex].votes || 0) + 1;
-                    
-                    await updateDoc(pollRef, {
-                        totalVotes: increment(1),
-                        options: newOptions
-                    });
+            // First, check if the user has already voted to be safe
+            const voteDoc = await getDoc(voteRef);
+            if (voteDoc.exists()) {
+                toast({ title: "You have already voted in this poll.", variant: "destructive" });
+                // Update local state just in case
+                if (!votedPolls.includes(pollId)) {
+                    setVotedPolls([...votedPolls, pollId]);
                 }
+                return;
+            }
+
+            // Record the user's vote to prevent re-voting
+            await setDoc(voteRef, { option: selectedOptionText, votedAt: Timestamp.now() });
+
+            // Update the poll counts
+            const pollToUpdate = polls.find(p => p.id === pollId);
+            if(pollToUpdate) {
+                const newOptions = pollToUpdate.options.map(option => {
+                    if (option.text === selectedOptionText) {
+                        return { ...option, votes: (option.votes || 0) + 1 };
+                    }
+                    return option;
+                });
+                
+                await updateDoc(pollRef, {
+                    totalVotes: increment(1),
+                    options: newOptions
+                });
             }
 
             toast({
                 title: "Vote Cast!",
                 description: "Thank you for your participation.",
             });
+            // Immediately update local state to reflect the vote
             setVotedPolls([...votedPolls, pollId]);
         } catch (error) {
             console.error("Error casting vote: ", error);
-            toast({ title: "Error casting vote", variant: "destructive" });
+            toast({ title: "Error casting vote", description: "Could not save your vote. Please try again.", variant: "destructive" });
         }
     };
     
@@ -135,16 +147,19 @@ export default function TenantVotingPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                     {polls.map((poll) => {
                         const hasVoted = votedPolls.includes(poll.id);
+                        const isPollActive = poll.status === 'Active';
+
                         return (
                             <Card key={poll.id}>
                                 <CardHeader>
                                     <div className="flex justify-between items-start">
                                         <CardTitle className="font-headline">{poll.question}</CardTitle>
-                                        <Badge variant={poll.status === 'Active' ? 'default' : 'secondary'}>{poll.status}</Badge>
+                                        <Badge variant={isPollActive ? 'default' : 'secondary'}>{poll.status}</Badge>
                                     </div>
+                                    <CardDescription>Total Votes: {poll.totalVotes || 0}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    {poll.status === 'Active' && !hasVoted ? (
+                                    {isPollActive && !hasVoted ? (
                                         <RadioGroup 
                                             value={selectedOptions[poll.id]}
                                             onValueChange={(value) => setSelectedOptions(prev => ({...prev, [poll.id]: value}))}
@@ -159,12 +174,12 @@ export default function TenantVotingPage() {
                                         </RadioGroup>
                                     ) : (
                                         poll.options.map((option, index) => {
-                                            const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+                                            const percentage = poll.totalVotes > 0 ? ((option.votes || 0) / poll.totalVotes) * 100 : 0;
                                             return (
                                                 <div key={index} className="space-y-2">
                                                     <div className="flex justify-between items-center text-sm">
                                                         <span>{option.text}</span>
-                                                        <span className="font-medium">{percentage.toFixed(0)}% ({option.votes} votes)</span>
+                                                        <span className="font-medium">{percentage.toFixed(0)}% ({option.votes || 0} votes)</span>
                                                     </div>
                                                     <Progress value={percentage} />
                                                 </div>
@@ -173,13 +188,13 @@ export default function TenantVotingPage() {
                                     )}
                                 </CardContent>
                                 <CardFooter>
-                                    {poll.status === 'Active' && !hasVoted && (
+                                    {isPollActive && !hasVoted && (
                                         <Button className="w-full" onClick={() => handleVote(poll.id)}>Submit Vote</Button>
                                     )}
-                                    {poll.status === 'Active' && hasVoted && (
+                                    {isPollActive && hasVoted && (
                                         <p className="text-sm text-muted-foreground w-full text-center">You have already voted in this poll.</p>
                                     )}
-                                    {poll.status === 'Closed' && (
+                                    {!isPollActive && (
                                         <p className="text-sm text-muted-foreground w-full text-center">This poll is closed.</p>
                                     )}
                                 </CardFooter>
@@ -197,3 +212,5 @@ export default function TenantVotingPage() {
         </>
     );
 }
+
+    
