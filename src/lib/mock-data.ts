@@ -70,3 +70,38 @@ export const initialEvents = [
         location: "Society Park"
     }
 ];
+
+export const marketplaceItems = [
+  {
+    title: "Old Bicycle",
+    description: "A classic road bike, good for parts or restoration. A bit of rust but rides well.",
+    price: "Rs 1,500",
+    seller: "Mr. Raj (A-101)",
+    image: "https://picsum.photos/seed/bicycle/600/400",
+    dataAiHint: "old bicycle",
+  },
+  {
+    title: "Microwave Oven",
+    description: "LG 20L solo microwave. In perfect working condition, less than a year old.",
+    price: "Rs 4,000",
+    seller: "Ms. Priya (B-202)",
+    image: "https://picsum.photos/seed/microwave/600/400",
+    dataAiHint: "microwave oven",
+  },
+  {
+    title: "Wooden Study Table",
+    description: "A sturdy wooden study table with a drawer. Minor scratches on the surface.",
+    price: "Rs 2,000",
+    seller: "Mrs. Devi (A-102)",
+    image: "https://picsum.photos/seed/desk/600/400",
+    dataAiHint: "study table",
+  },
+    {
+    title: "Toddler Car Seat",
+    description: "Graco brand car seat suitable for children from 1-4 years. Excellent condition.",
+    price: "Rs 3,500",
+    seller: "Mr. Khan (C-301)",
+    image: "https://picsum.photos/seed/car-seat/600/400",
+    dataAiHint: "car seat",
+  },
+];

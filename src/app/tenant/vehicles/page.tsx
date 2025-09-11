@@ -119,7 +119,7 @@ export default function VehiclesPage() {
   return (
     <>
       <PageHeader
-        title="Vehicle Registration"
+        title="My Vehicles"
         description="Add and manage your vehicles for parking access."
       />
       <div className="grid gap-8 md:grid-cols-2">

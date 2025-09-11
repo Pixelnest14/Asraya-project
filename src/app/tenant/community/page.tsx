@@ -92,10 +92,10 @@ export default function CommunityPage() {
         description="Stay connected with society events and announcements."
       />
 
-      <Tabs defaultValue="events">
+      <Tabs defaultValue="announcements">
         <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="events">Upcoming Events</TabsTrigger>
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
+            <TabsTrigger value="events">Upcoming Events</TabsTrigger>
         </TabsList>
         <TabsContent value="events">
             <Card>
