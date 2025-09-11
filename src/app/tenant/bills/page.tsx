@@ -200,9 +200,9 @@ export default function TenantBillsPage() {
                             <DialogContent className="sm:max-w-[480px]">
                             <DialogHeader>
                                 <DialogTitle>Submit Payment Proof</DialogTitle>
-                                <p className="text-sm text-muted-foreground pt-2">
+                                <CardDescription className="text-sm text-muted-foreground pt-2">
                                 Pay via PhonePe/GPay to UPI ID: <strong className="text-foreground">society-upi@bank</strong>. Then, upload the payment screenshot below.
-                                </p>
+                                </CardDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
                                 <div className="space-y-2">

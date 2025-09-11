@@ -229,7 +229,7 @@ export default function TenantMarketplacePage() {
                         <DialogTitle>Seller Contact Information</DialogTitle>
                     </DialogHeader>
                     {selectedSeller && (
-                         <div className="space-y-4">
+                         <div className="space-y-4 py-4">
                             <div className="flex justify-between items-baseline">
                                 <span className="text-muted-foreground">Name:</span>
                                 <span className="font-bold">{selectedSeller.name}</span>
