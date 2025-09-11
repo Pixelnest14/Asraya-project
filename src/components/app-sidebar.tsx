@@ -18,19 +18,17 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LogOut, Settings } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import * as icons from "lucide-react";
 import type { NavItem } from "@/lib/nav-items";
 import { AsrayaLogo } from "./icons";
-import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
 
 type AppSidebarProps = {
   children: React.ReactNode;
   navItems: NavItem[];
-  role: "Admin" | "Tenant" | "Owner";
+  role: "Admin" | "Tenant";
 };
 
 function SidebarNavigation({ navItems }: { navItems: NavItem[] }) {
@@ -134,10 +132,6 @@ export function AppSidebar({ children, navItems, role }: AppSidebarProps) {
                         <Bell className="h-5 w-5"/>
                         <span className="sr-only">Notifications</span>
                     </Button>
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${role}`} alt={role} />
-                        <AvatarFallback>{role.charAt(0)}</AvatarFallback>
-                    </Avatar>
                 </div>
             </header>
             <main className="p-4 sm:p-6 lg:p-8 flex-1">{children}</main>

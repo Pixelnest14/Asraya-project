@@ -91,10 +91,12 @@ export default function TenantDashboard() {
         };
 
     }, [db, user, isAuthLoading, userFlat]);
+    
+    const dashboardTitle = user?.displayName ? `${user.displayName.split(' ')[0]}'s Dashboard` : "My Dashboard";
 
   return (
     <>
-      <PageHeader title={user ? `${user.displayName || 'Tenant'}'s Dashboard` : "My Dashboard"} description="Your personalized summary of society life." />
+      <PageHeader title={dashboardTitle} description="Your personalized summary of society life." />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Outstanding Dues" value={outstandingDues ?? <Skeleton className="h-6 w-24" />} icon={CreditCard} />
         <StatCard title="Active Complaints" value={activeComplaints ?? <Skeleton className="h-6 w-10" />} icon={Wrench} />

@@ -39,6 +39,7 @@ const ADMIN_PASSWORD = "admin"; // Prototype admin password
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
   const [role, setRole] = useState('tenant');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +55,15 @@ export default function LoginPage() {
         variant: 'destructive',
       });
       return;
+    }
+    
+    if (role === 'tenant' && !name.trim()) {
+        toast({
+            title: 'Name is required',
+            description: 'Please enter your name.',
+            variant: 'destructive',
+        });
+        return;
     }
 
     if (role === 'admin' && password !== ADMIN_PASSWORD) {
@@ -77,19 +87,20 @@ export default function LoginPage() {
     }
     
     try {
-      // Try to sign in. If it fails because the user doesn't exist, create a new user.
       try {
-        await signInWithEmailAndPassword(auth, email, password || 'password'); // Use a default password if needed
+        await signInWithEmailAndPassword(auth, email, password || 'password');
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-          // Create a new user if they don't exist
           const userCredential = await createUserWithEmailAndPassword(auth, email, password || 'password');
-          const displayName = `User (${role.charAt(0).toUpperCase() + role.slice(1)})`;
-          await updateProfile(userCredential.user, { displayName: displayName });
+          await updateProfile(userCredential.user, { displayName: name });
         } else {
-          // Re-throw other errors (like wrong password or operation not allowed)
           throw error;
         }
+      }
+
+      // Ensure display name is updated for existing users too
+      if (auth.currentUser && auth.currentUser.displayName !== name && role === 'tenant') {
+          await updateProfile(auth.currentUser, { displayName: name });
       }
 
       toast({ title: 'Login Successful!' });
@@ -114,7 +125,6 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-     // If we're using placeholder credentials, just navigate to the correct page.
     if (firebaseConfig.apiKey === 'AIzaSyB1gSdbomqvmuK7I4lpnHjSLCDSrcTUhto') {
       toast({ title: 'Login Successful (Prototype Mode)!' });
       router.push('/tenant');
@@ -133,7 +143,6 @@ export default function LoginPage() {
     try {
         await signInWithPopup(auth, provider);
         toast({ title: "Google Sign-In Successful!" });
-        // Redirect to a default role page, e.g., tenant
         router.push('/tenant');
     } catch (error: any) {
         console.error("Google Sign-In Error:", error);
@@ -193,6 +202,22 @@ export default function LoginPage() {
                   </SelectContent>
                 </Select>
               </div>
+               
+              {role === 'tenant' && (
+                <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                    id="name" 
+                    type="text"
+                    placeholder="Enter your full name" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isFormDisabled}
+                    required
+                    />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="user-id">Email</Label>
                 <Input 
@@ -236,5 +261,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
