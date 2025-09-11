@@ -86,12 +86,15 @@ export default function LoginPage() {
       return;
     }
     
+    // For tenants, we use a default long password. For admin, we use the provided one.
+    const effectivePassword = role === 'tenant' ? 'password123' : password;
+
     try {
       try {
-        await signInWithEmailAndPassword(auth, email, password || 'password');
+        await signInWithEmailAndPassword(auth, email, effectivePassword);
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password || 'password');
+          const userCredential = await createUserWithEmailAndPassword(auth, email, effectivePassword);
           await updateProfile(userCredential.user, { displayName: name });
         } else {
           throw error;
@@ -110,6 +113,8 @@ export default function LoginPage() {
       let description = "An unexpected error occurred. Please try again.";
       if (error.code === 'auth/operation-not-allowed') {
           description = 'Email/Password sign-in is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method to continue.';
+      } else if (error.code === 'auth/weak-password') {
+          description = 'The default password is too weak. This is a bug in the prototype.';
       } else if (error.message) {
           description = error.message;
       }
