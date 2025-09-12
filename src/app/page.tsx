@@ -37,8 +37,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-const ADMIN_PASSWORD = "admin123"; // Prototype admin password
-
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
   const [role, setRole] = useState('tenant');
@@ -54,85 +52,74 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!email) {
-      toast({
-        title: 'Email is required',
-        description: 'Please enter your email address to log in.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (role === 'tenant' && !name.trim()) {
-        toast({
-            title: 'Name is required',
-            description: 'Please enter your name.',
-            variant: 'destructive',
-        });
-        return;
-    }
-    
     setIsLoading(true);
 
     if (isAuthLoading || !auth) {
-      toast({
-        title: "Authentication service is not ready",
-        description: "Please wait a moment and try again.",
-        variant: "destructive"
-      });
+      setError("Authentication service is not ready. Please wait and try again.");
       setIsLoading(false);
       return;
     }
-    
-    const effectivePassword = role === 'tenant' ? 'password123' : password;
+
+    // Default password for tenants for prototype purposes
+    const tenantPassword = 'password123';
+    // Admin password for prototype purposes
+    const adminPassword = 'admin123';
 
     try {
-      try {
-        // Attempt to sign in first
-        await signInWithEmailAndPassword(auth, email, effectivePassword);
-      } catch (signInError: any) {
-        // If user is not found, create a new account
-        if (signInError.code === 'auth/user-not-found') {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, effectivePassword);
-          await updateProfile(userCredential.user, { displayName: name });
-        } else {
-          // For any other sign-in error (wrong password, etc.), throw it to be caught by the outer catch block
-          throw signInError;
-        }
-      }
-      
-      // If sign-in or sign-up was successful, update the profile if needed
-      if (auth.currentUser && auth.currentUser.displayName !== name && role === 'tenant') {
-          await updateProfile(auth.currentUser, { displayName: name });
-      }
+        let userCredential;
+        if (role === 'tenant') {
+            try {
+                userCredential = await signInWithEmailAndPassword(auth, email, tenantPassword);
+            } catch (signInError: any) {
+                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                     if (!name.trim()) {
+                        setError('Please enter your name to create an account.');
+                        throw new Error('Name is required for signup.');
+                    }
+                    userCredential = await createUserWithEmailAndPassword(auth, email, tenantPassword);
+                    await updateProfile(userCredential.user, { displayName: name });
+                } else {
+                    throw signInError; // Re-throw other sign-in errors
+                }
+            }
+             if (auth.currentUser && auth.currentUser.displayName !== name) {
+                await updateProfile(auth.currentUser, { displayName: name });
+            }
 
+        } else if (role === 'admin') {
+            if (password !== adminPassword) {
+                setError('Incorrect Admin Password. The correct password is "admin123".');
+                throw new Error("Invalid admin password");
+            }
+            try {
+                userCredential = await signInWithEmailAndPassword(auth, email, adminPassword);
+            } catch (error: any) {
+                 if (error.code === 'auth/user-not-found') {
+                    // Create admin user if it doesn't exist
+                    userCredential = await createUserWithEmailAndPassword(auth, email, adminPassword);
+                 } else {
+                    setError("Invalid credentials for admin.");
+                    throw error;
+                 }
+            }
+        } else { // Staff login
+             try {
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
+             } catch (error: any) {
+                setError("Invalid credentials for staff.");
+                throw error;
+             }
+        }
+        
       toast({ title: 'Login Successful!' });
       router.push(role === 'staff' ? '/staff' : `/${role}`);
+
     } catch (authError: any) {
-      console.error("Firebase Auth Error:", authError);
-      let description = "An unexpected error occurred. Please try again.";
-      if (authError.code === 'auth/invalid-credential') {
-          if (role === 'admin') {
-              description = 'Incorrect Admin Password. Please use the prototype password: "admin123"';
-          } else {
-              description = 'Incorrect email or password. Please try again.';
-          }
-      } else if (authError.code === 'auth/email-already-in-use') {
-          description = 'This email is already in use. Please try logging in or use a different email.';
-      } else if (authError.code === 'auth/operation-not-allowed') {
-          description = 'Email/Password sign-in is not enabled. Please enable it in your Firebase console.';
-      } else if (authError.code === 'auth/weak-password') {
-          description = `The password must be at least 6 characters long.`;
-      } else if (authError.message) {
-          description = authError.message;
+      console.error("Authentication Error:", authError);
+      if (!error) { // Only set a generic error if a specific one isn't already set
+        const description = authError.message || "An unexpected error occurred.";
+        setError(description);
       }
-      setError(description);
-      toast({
-        title: 'Login Failed',
-        description: description,
-        variant: 'destructive',
-      });
     } finally {
       setIsLoading(false);
     }
@@ -247,14 +234,14 @@ export default function LoginPage() {
                 />
               </div>
 
-               {role === 'admin' && (
+               {(role === 'admin' || role === 'staff') && (
                 <div className="space-y-2">
-                    <Label htmlFor="password">Admin Password</Label>
+                    <Label htmlFor="password">{role === 'admin' ? 'Admin' : 'Staff'} Password</Label>
                     <div className="relative">
                         <Input 
                             id="password" 
                             type={showPassword ? "text" : "password"}
-                            placeholder="Enter admin password" 
+                            placeholder={`Enter ${role} password`} 
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             disabled={isFormDisabled}
@@ -272,6 +259,7 @@ export default function LoginPage() {
                             <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                         </Button>
                     </div>
+                    {role === 'admin' && <p className='text-xs text-muted-foreground'>Hint: The prototype password is "admin123"</p>}
                 </div>
               )}
 
