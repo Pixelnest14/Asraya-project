@@ -74,7 +74,13 @@ export default function LoginPage() {
     }
 
     if (role === 'admin' && password !== ADMIN_PASSWORD) {
-        setError('Incorrect Admin Password');
+        const adminError = 'Incorrect Admin Password. Please use the prototype password.';
+        setError(adminError);
+        toast({
+            title: 'Login Failed',
+            description: adminError,
+            variant: 'destructive',
+        });
         return;
     }
     
@@ -119,6 +125,9 @@ export default function LoginPage() {
       let description = "An unexpected error occurred. Please try again.";
       if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
           description = 'Incorrect email or password. Please try again.';
+          if(role === 'admin') {
+            description = 'Incorrect Admin Password. Please use the prototype password.'
+          }
       } else if (authError.code === 'auth/email-already-in-use') {
           description = 'This email is already in use. Please try logging in or use a different email.';
       } else if (authError.code === 'auth/operation-not-allowed') {
