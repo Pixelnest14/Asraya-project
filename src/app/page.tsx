@@ -60,65 +60,58 @@ export default function LoginPage() {
       return;
     }
 
-    // Default password for tenants for prototype purposes
-    const tenantPassword = 'password123';
-    // Admin password for prototype purposes
-    const adminPassword = 'admin123';
-
     try {
-        let userCredential;
-        if (role === 'tenant') {
-            try {
-                userCredential = await signInWithEmailAndPassword(auth, email, tenantPassword);
-            } catch (signInError: any) {
-                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-                     if (!name.trim()) {
-                        setError('Please enter your name to create an account.');
-                        throw new Error('Name is required for signup.');
-                    }
-                    userCredential = await createUserWithEmailAndPassword(auth, email, tenantPassword);
-                    await updateProfile(userCredential.user, { displayName: name });
-                } else {
-                    throw signInError; // Re-throw other sign-in errors
-                }
+      if (role === 'tenant') {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          // If sign-in is successful, ensure display name is updated if it's different
+          if (auth.currentUser && auth.currentUser.displayName !== name && name) {
+            await updateProfile(auth.currentUser, { displayName: name });
+          }
+        } catch (signInError: any) {
+          if (signInError.code === 'auth/user-not-found') {
+            // If user doesn't exist, create a new account
+            if (!name.trim()) {
+              setError('Please enter your name to create an account.');
+              throw new Error('Name is required for signup.');
             }
-             if (auth.currentUser && auth.currentUser.displayName !== name) {
-                await updateProfile(auth.currentUser, { displayName: name });
-            }
-
-        } else if (role === 'admin') {
-            if (password !== adminPassword) {
-                setError('Incorrect Admin Password. The correct password is "admin123".');
-                throw new Error("Invalid admin password");
-            }
-            try {
-                userCredential = await signInWithEmailAndPassword(auth, email, adminPassword);
-            } catch (error: any) {
-                 if (error.code === 'auth/user-not-found') {
-                    // Create admin user if it doesn't exist
-                    userCredential = await createUserWithEmailAndPassword(auth, email, adminPassword);
-                 } else {
-                    setError("Invalid credentials for admin.");
-                    throw error;
-                 }
-            }
-        } else { // Staff login
-             try {
-                userCredential = await signInWithEmailAndPassword(auth, email, password);
-             } catch (error: any) {
-                setError("Invalid credentials for staff.");
-                throw error;
-             }
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCredential.user, { displayName: name });
+          } else if (signInError.code === 'auth/invalid-credential') {
+            setError('Incorrect email or password.');
+            throw signInError;
+          } else {
+            // Handle other errors
+            setError(signInError.message);
+            throw signInError;
+          }
         }
+      } else { // Admin or Staff
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+        } catch (error: any) {
+          if (role === 'admin' && error.code === 'auth/invalid-credential') {
+             setError('Incorrect Admin Credentials. Hint: The password is "admin123".');
+          } else if (error.code === 'auth/user-not-found' && role === 'admin') {
+            // Auto-create admin if not found
+            const adminPassword = 'admin123';
+            await createUserWithEmailAndPassword(auth, email, adminPassword);
+          }
+          else {
+            setError("Invalid credentials. Please try again.");
+          }
+          throw error;
+        }
+      }
         
       toast({ title: 'Login Successful!' });
       router.push(role === 'staff' ? '/staff' : `/${role}`);
 
     } catch (authError: any) {
-      console.error("Authentication Error:", authError);
-      if (!error) { // Only set a generic error if a specific one isn't already set
-        const description = authError.message || "An unexpected error occurred.";
-        setError(description);
+      console.error("Authentication Error:", authError.code, authError.message);
+      // Don't set a generic error if a specific one is already there from the catch blocks
+      if (!error && authError.message) {
+        setError(authError.message);
       }
     } finally {
       setIsLoading(false);
@@ -234,34 +227,33 @@ export default function LoginPage() {
                 />
               </div>
 
-               {(role === 'admin' || role === 'staff') && (
-                <div className="space-y-2">
-                    <Label htmlFor="password">{role === 'admin' ? 'Admin' : 'Staff'} Password</Label>
-                    <div className="relative">
-                        <Input 
-                            id="password" 
-                            type={showPassword ? "text" : "password"}
-                            placeholder={`Enter ${role} password`} 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={isFormDisabled}
-                            required
-                            className={cn("pr-10", error && "border-destructive")}
-                        />
-                         <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute inset-y-0 right-0 h-full px-3"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-                        </Button>
-                    </div>
-                    {role === 'admin' && <p className='text-xs text-muted-foreground'>Hint: The prototype password is "admin123"</p>}
-                </div>
-              )}
+              <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                      <Input 
+                          id="password" 
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password" 
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          disabled={isFormDisabled}
+                          required
+                          className={cn("pr-10", error && "border-destructive")}
+                      />
+                       <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute inset-y-0 right-0 h-full px-3"
+                          onClick={() => setShowPassword(!showPassword)}
+                      >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                      </Button>
+                  </div>
+                  {role === 'admin' && <p className='text-xs text-muted-foreground'>Hint: The prototype password is "admin123"</p>}
+                  {role === 'tenant' && <p className='text-xs text-muted-foreground'>For new tenants, this will be your password. For testing, you can use "password123".</p>}
+              </div>
 
               {error && (
                 <Alert variant="destructive">
