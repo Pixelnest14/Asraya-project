@@ -94,32 +94,41 @@ export default function LoginPage() {
 
     try {
       try {
+        // Attempt to sign in first
         await signInWithEmailAndPassword(auth, email, effectivePassword);
-      } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      } catch (signInError: any) {
+        // If user is not found, create a new account
+        if (signInError.code === 'auth/user-not-found') {
           const userCredential = await createUserWithEmailAndPassword(auth, email, effectivePassword);
           await updateProfile(userCredential.user, { displayName: name });
         } else {
-          throw error;
+          // For any other sign-in error (wrong password, etc.), throw it to be caught by the outer catch block
+          throw signInError;
         }
       }
-
+      
+      // If sign-in or sign-up was successful, update the profile if needed
       if (auth.currentUser && auth.currentUser.displayName !== name && role === 'tenant') {
           await updateProfile(auth.currentUser, { displayName: name });
       }
 
       toast({ title: 'Login Successful!' });
-      router.push(`/${role}`);
-    } catch (error: any) {
-      console.error("Firebase Auth Error:", error);
+      router.push(role === 'staff' ? '/staff' : `/${role}`);
+    } catch (authError: any) {
+      console.error("Firebase Auth Error:", authError);
       let description = "An unexpected error occurred. Please try again.";
-      if (error.code === 'auth/operation-not-allowed') {
-          description = 'Email/Password sign-in is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method to continue.';
-      } else if (error.code === 'auth/weak-password') {
-          description = `The password must be at least 6 characters long. The effective password was: '${effectivePassword}'`;
-      } else if (error.message) {
-          description = error.message;
+      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
+          description = 'Incorrect email or password. Please try again.';
+      } else if (authError.code === 'auth/email-already-in-use') {
+          description = 'This email is already in use. Please try logging in or use a different email.';
+      } else if (authError.code === 'auth/operation-not-allowed') {
+          description = 'Email/Password sign-in is not enabled. Please enable it in your Firebase console.';
+      } else if (authError.code === 'auth/weak-password') {
+          description = `The password must be at least 6 characters long.`;
+      } else if (authError.message) {
+          description = authError.message;
       }
+      setError(description);
       toast({
         title: 'Login Failed',
         description: description,
