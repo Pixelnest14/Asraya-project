@@ -72,17 +72,6 @@ export default function LoginPage() {
         });
         return;
     }
-
-    if (role === 'admin' && password !== ADMIN_PASSWORD) {
-        const adminError = 'Incorrect Admin Password. Please use the prototype password.';
-        setError(adminError);
-        toast({
-            title: 'Login Failed',
-            description: adminError,
-            variant: 'destructive',
-        });
-        return;
-    }
     
     setIsLoading(true);
 
@@ -123,10 +112,11 @@ export default function LoginPage() {
     } catch (authError: any) {
       console.error("Firebase Auth Error:", authError);
       let description = "An unexpected error occurred. Please try again.";
-      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
-          description = 'Incorrect email or password. Please try again.';
-          if(role === 'admin') {
-            description = 'Incorrect Admin Password. Please use the prototype password.'
+      if (authError.code === 'auth/invalid-credential') {
+          if (role === 'admin') {
+              description = 'Incorrect Admin Password. Please use the prototype password: "admin123"';
+          } else {
+              description = 'Incorrect email or password. Please try again.';
           }
       } else if (authError.code === 'auth/email-already-in-use') {
           description = 'This email is already in use. Please try logging in or use a different email.';
