@@ -4,13 +4,14 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
-import { CreditCard, Wrench, Package, Shield, CalendarDays, Megaphone } from "lucide-react";
+import { CreditCard, Wrench, Package, Shield, CalendarDays, Megaphone, Siren } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/components/firebase-provider";
 import { collection, query, where, onSnapshot, orderBy, limit, Timestamp, doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Announcement = {
     id: string;
@@ -25,6 +26,13 @@ type CommunityEvent = {
     location: string;
 };
 
+type EmergencyAlert = {
+    id: string;
+    message: string;
+    timestamp: any;
+};
+
+
 export default function TenantDashboard() {
     const { db, user, isLoading: isAuthLoading } = useFirebase();
     
@@ -32,7 +40,8 @@ export default function TenantDashboard() {
     const [outstandingDues, setOutstandingDues] = useState<string | null>(null);
     const [activeComplaints, setActiveComplaints] = useState<number | null>(null);
     
-    // State for announcements and events
+    // State for alerts, announcements and events
+    const [alert, setAlert] = useState<EmergencyAlert | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [events, setEvents] = useState<CommunityEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +56,17 @@ export default function TenantDashboard() {
         const subscriptions: (() => void)[] = [];
 
         if (db) {
+            // Fetch latest active emergency alert
+            const alertsQuery = query(collection(db, "emergencyAlerts"), where("active", "==", true), orderBy("timestamp", "desc"), limit(1));
+            subscriptions.push(onSnapshot(alertsQuery, (snapshot) => {
+                if (!snapshot.empty) {
+                    const latestAlert = snapshot.docs[0];
+                    setAlert({ id: latestAlert.id, ...latestAlert.data() } as EmergencyAlert);
+                } else {
+                    setAlert(null);
+                }
+            }));
+
             // Fetch latest announcements
             const announcementsQuery = query(collection(db, "notices"), orderBy("createdAt", "desc"), limit(2));
             subscriptions.push(onSnapshot(announcementsQuery, (snapshot) => {
@@ -97,6 +117,19 @@ export default function TenantDashboard() {
   return (
     <>
       <PageHeader title={dashboardTitle} description="Your personalized summary of society life." />
+      
+       {isLoading ? (
+        <Skeleton className="h-24 mb-6" />
+      ) : alert ? (
+        <Alert variant="destructive" className="mb-6">
+            <Siren className="h-4 w-4" />
+            <AlertTitle>Emergency Alert!</AlertTitle>
+            <AlertDescription>
+                {alert.message} - <span className="text-xs">Issued at: {new Date(alert.timestamp.seconds * 1000).toLocaleTimeString()}</span>
+            </AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Outstanding Dues" value={outstandingDues ?? <Skeleton className="h-6 w-24" />} icon={CreditCard} />
         <StatCard title="Active Complaints" value={activeComplaints ?? <Skeleton className="h-6 w-10" />} icon={Wrench} />
