@@ -195,9 +195,9 @@ export default function AdminComplaintsPage() {
               </div>
                <div className="grid grid-cols-3 gap-2 items-center">
                 <Label className="font-semibold">Status:</Label>
-                <p className="col-span-2">
+                <div className="col-span-2">
                   <Badge variant={getStatusVariant(selectedComplaint.status)}>{selectedComplaint.status}</Badge>
-                </p>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <Label className="font-semibold">Description:</Label>
