@@ -34,7 +34,6 @@ export default function TenantEmergencyPage() {
         const alertsQuery = query(
             collection(db, "emergencyAlerts"),
             where("active", "==", true),
-            orderBy("timestamp", "desc"),
             limit(1)
         );
 

@@ -57,7 +57,7 @@ export default function TenantDashboard() {
 
         if (db) {
             // Fetch latest active emergency alert
-            const alertsQuery = query(collection(db, "emergencyAlerts"), where("active", "==", true), orderBy("timestamp", "desc"), limit(1));
+            const alertsQuery = query(collection(db, "emergencyAlerts"), where("active", "==", true), limit(1));
             subscriptions.push(onSnapshot(alertsQuery, (snapshot) => {
                 if (!snapshot.empty) {
                     const latestAlert = snapshot.docs[0];
