@@ -68,7 +68,7 @@ export default function LoginPage() {
             throw signInError;
           }
         }
-      } else { // Admin or Staff
+      } else { // Admin
         try {
           await signInWithEmailAndPassword(auth, email, password);
         } catch (error: any) {
@@ -82,7 +82,7 @@ export default function LoginPage() {
       }
         
       toast({ title: 'Login Successful!' });
-      router.push(role === 'staff' ? '/staff' : `/${role}`);
+      router.push(`/${role}`);
 
     } catch (authError: any) {
       console.error("Authentication Error:", authError.code, authError.message);
@@ -118,7 +118,6 @@ export default function LoginPage() {
                   <SelectContent>
                     <SelectItem value="tenant">Tenant</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

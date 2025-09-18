@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { owners as initialOwners, tenants as initialTenants, staff as initialStaff } from "@/lib/mock-data";
+import { owners as initialOwners, tenants as initialTenants } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/components/firebase-provider";
 import { collection, onSnapshot, getDocs, setDoc, doc } from "firebase/firestore";
@@ -20,7 +20,6 @@ type Person = {
 
 type Owner = Person & { flat: string };
 type Tenant = Person & { flat: string };
-type Staff = Person & { role: string };
 
 const setupInitialData = async (db, collectionName, data) => {
     const collectionRef = collection(db, collectionName);
@@ -36,7 +35,6 @@ export default function DirectoryPage() {
   const { db } = useFirebase();
   const [owners, setOwners] = useState<Owner[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +46,6 @@ export default function DirectoryPage() {
             await Promise.all([
                 setupInitialData(db, "owners", initialOwners),
                 setupInitialData(db, "tenants", initialTenants),
-                setupInitialData(db, "staff", initialStaff),
             ]);
         } catch (error) {
             console.error("Error setting up initial directory data:", error);
@@ -60,16 +57,12 @@ export default function DirectoryPage() {
         const unsubTenants = onSnapshot(collection(db, "tenants"), (snapshot) => {
             setTenants(snapshot.docs.map(doc => doc.data() as Tenant));
         });
-        const unsubStaff = onSnapshot(collection(db, "staff"), (snapshot) => {
-            setStaff(snapshot.docs.map(doc => doc.data() as Staff));
-        });
 
         setIsLoading(false);
 
         return () => {
             unsubOwners();
             unsubTenants();
-            unsubStaff();
         };
     };
 
@@ -91,10 +84,9 @@ export default function DirectoryPage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="owners">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="owners">Owners</TabsTrigger>
                     <TabsTrigger value="tenants">Tenants</TabsTrigger>
-                    <TabsTrigger value="staff">Staff</TabsTrigger>
                 </TabsList>
                 <TabsContent value="owners">
                     <Table>
@@ -143,34 +135,6 @@ export default function DirectoryPage() {
                                     <TableCell className="font-medium">{tenant.name}</TableCell>
                                     <TableCell>{tenant.flat}</TableCell>
                                     <TableCell>{tenant.phone}</TableCell>
-                                    <TableCell>
-                                        <Button variant="outline" size="sm">Contact</Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                        </TableBody>
-                    </Table>
-                </TabsContent>
-                <TabsContent value="staff">
-                     <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Phone</TableHead>
-                             <TableHead>Action</TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {isLoading ? (
-                            <TableRow><TableCell colSpan={4}><Skeleton className="h-8" /></TableCell></TableRow>
-                        ) : (
-                            staff.map((person) => (
-                                <TableRow key={person.id}>
-                                    <TableCell className="font-medium">{person.name}</TableCell>
-                                    <TableCell>{person.role}</TableCell>
-                                    <TableCell>{person.phone}</TableCell>
                                     <TableCell>
                                         <Button variant="outline" size="sm">Contact</Button>
                                     </TableCell>

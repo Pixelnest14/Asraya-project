@@ -31,12 +31,6 @@ export const tenants = [
     { id: "3", name: "Jane Smith", flat: "C-302", phone: "8765432107" },
 ];
 
-export const staff = [
-    { id: "1", name: "Suresh", role: "Security", phone: "7654321098" },
-    { id: "2", name: "Ram", role: "Housekeeping", phone: "7654321097" },
-    { id: "3", name: "Gita", role: "Gardener", phone: "7654321096" },
-];
-
 export const initialParkingSlots = [
   { id: 'A1', status: 'Occupied', allottedTo: 'A-101' },
   { id: 'A2', status: 'Allotted', allottedTo: 'A-102' },

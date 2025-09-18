@@ -38,8 +38,3 @@ export const tenantNavItems: NavItem[] = [
   { label: "AI Assistant", href: "/tenant/chatbot", icon: "Bot" },
   { label: "Smart Home", href: "/tenant/smart-home", icon: "Home" },
 ];
-
-export const staffNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/staff/dashboard", icon: "LayoutDashboard" },
-  { label: "Assigned Tasks", href: "/staff/tasks", icon: "ClipboardList" },
-];
