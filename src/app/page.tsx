@@ -64,20 +64,17 @@ export default function LoginPage() {
             setError('Incorrect email or password.');
             throw signInError;
           } else {
-            setError(signInError.message);
-            throw signInError;
+            throw signInError; // Re-throw to be caught by the outer catch block
           }
         }
       } else { // Admin
         try {
           await signInWithEmailAndPassword(auth, email, password);
-        } catch (error: any) {
-          if (error.code === 'auth/invalid-credential') {
+        } catch (adminError: any) {
+          if (adminError.code === 'auth/invalid-credential') {
              setError('Incorrect Credentials. For prototype purposes, the Admin password is "admin123".');
-          } else {
-            setError("Invalid credentials. Please try again.");
           }
-          throw error;
+          throw adminError; // Re-throw to be caught by the outer catch block
         }
       }
         
@@ -86,7 +83,9 @@ export default function LoginPage() {
 
     } catch (authError: any) {
       console.error("Authentication Error:", authError.code, authError.message);
-      if (!error && authError.message) {
+      if (authError.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your internet connection or ensure your app\'s domain is authorized in the Firebase console under Authentication > Settings > Authorized domains.');
+      } else if (!error) { // Avoid overwriting more specific errors
         setError(authError.message);
       }
     } finally {
