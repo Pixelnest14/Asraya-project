@@ -20,9 +20,6 @@ export const adminNavItems: NavItem[] = [
   { label: "Voting", href: "/admin/voting", icon: "Vote" },
   { label: "Emergency Alerts", href: "/admin/emergency-alert", icon: "Siren" },
   { label: "Marketplace", href: "/admin/marketplace", icon: "ShoppingCart" },
-  { label: "Water Meter", href: "/admin/smart-home/water", icon: "Droplets" },
-  { label: "Light Control", href: "/admin/smart-home/lights", icon: "Lightbulb" },
-  { label: "Parking System", href: "/admin/smart-home/parking", icon: "Car" },
 ];
 
 export const tenantNavItems: NavItem[] = [

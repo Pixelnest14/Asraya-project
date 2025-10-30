@@ -1,235 +1,101 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
-import { Lightbulb, Car, ShieldCheck, CheckCircle, Clock, Sun } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useFirebase } from "@/components/firebase-provider";
-import { collection, doc, onSnapshot, updateDoc, getDoc, setDoc } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
-
-
-type LightZone = {
-    id: string;
-    name: string;
-    status: "On" | "Off" | "On (Auto)";
-    icon: "Lightbulb";
-};
-
-const initialLightZones: Omit<LightZone, 'id'>[] = [
-    { name: "Lobby & Entrance", status: "On", icon: "Lightbulb" },
-    { name: "Garden Area", status: "On (Auto)", icon: "Lightbulb" },
-    { name: "1st Floor Corridor", status: "Off", icon: "Lightbulb" },
-    { name: "2nd Floor Corridor", status: "On", icon: "Lightbulb" },
-    { name: "3rd Floor Corridor", status: "Off", icon: "Lightbulb" },
-    { name: "Parking Area", status: "On (Auto)", icon: "Lightbulb" },
-];
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ExternalLink, Download } from "lucide-react";
+import Link from "next/link";
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function SmartHomePage() {
-    const { toast } = useToast();
-    const { db } = useFirebase();
-    const [lightZones, setLightZones] = useState<LightZone[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!db) return;
-
-        const setupAndFetchZones = async () => {
-            setIsLoading(true);
-            const lightZonesCollection = collection(db, "lightZones");
-
-            // This is primarily for the admin to set up, but doesn't hurt to have a fallback here
-            try {
-                for (const zoneData of initialLightZones) {
-                    const zoneId = zoneData.name.replace(/\s+/g, '-').toLowerCase();
-                    const docRef = doc(db, "lightZones", zoneId);
-                    const docSnap = await getDoc(docRef);
-                    if (!docSnap.exists()) {
-                        await setDoc(docRef, zoneData);
-                    }
-                }
-            } catch (error) {
-                console.error("Error setting up initial zones:", error);
-            }
-
-            const unsubscribe = onSnapshot(collection(db, "lightZones"), 
-                (snapshot) => {
-                    const zonesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LightZone));
-                    setLightZones(zonesData.sort((a, b) => a.name.localeCompare(b.name)));
-                    setIsLoading(false);
-                },
-                (error) => {
-                    console.error("Error fetching light zones:", error);
-                    toast({ title: "Error", description: "Could not fetch light zone data.", variant: "destructive" });
-                    setIsLoading(false);
-                }
-            );
-
-            return unsubscribe;
-        };
-        
-        const unsubscribePromise = setupAndFetchZones();
-
-        return () => {
-             unsubscribePromise.then(unsubscribe => {
-                if (unsubscribe) {
-                    unsubscribe();
-                }
-            });
-        };
-    }, [db, toast]);
-
-    const handleToggle = async (id: string, currentStatus: LightZone['status']) => {
-        if (!db) return;
-        if (currentStatus.includes("Auto")) {
-            toast({ title: "Auto Zone", description: "This zone is controlled automatically." });
-            return;
-        }
-        const newStatus = currentStatus === "On" ? "Off" : "On";
-        const zoneRef = doc(db, "lightZones", id);
-        try {
-            await updateDoc(zoneRef, { status: newStatus });
-        } catch (error) {
-            console.error("Error updating light zone:", error);
-            toast({ title: "Update Failed", description: "Could not update light status.", variant: "destructive" });
-        }
-    };
-
-    const handleRegisterGuest = () => {
-        toast({
-            title: "Guest Vehicle Registered",
-            description: "An entry pass has been sent to your guest for today.",
-        });
-    }
-    
-    const lightsActiveCount = lightZones.filter(zone => zone.status.includes("On")).length;
-    const totalZones = lightZones.length;
-
-    const getIcon = (iconName: "Lightbulb") => {
-        if (iconName === 'Lightbulb') return Lightbulb;
-        return Lightbulb;
-    }
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <>
       <PageHeader
-        title="My Smart Home"
-        description="Control your home's smart devices from anywhere."
+        title="Blynk App"
+        description="Control all your smart home devices using the Blynk mobile app."
       />
-      <div className="space-y-8">
-        <div>
-            <h2 className="text-xl font-bold font-headline mb-4">Smart Light System</h2>
-             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Lights Active</CardTitle>
-                        <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-bold">{lightsActiveCount} / {totalZones} Zones</div> }
-                        <p className="text-xs text-muted-foreground">Currently powered on</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Scheduled Scenes</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">2 Active</div>
-                        <p className="text-xs text-muted-foreground">Evening & Night</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Global Control</CardTitle>
-                        <Sun className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent className="flex gap-2">
-                        <Button className="flex-1" variant="outline">All On</Button>
-                        <Button className="flex-1" variant="destructive">All Off</Button>
-                    </CardContent>
-                </Card>
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Smart Home Login</CardTitle>
+            <CardDescription>
+              Use these credentials to log in to the Blynk app.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" value="naragattiabc12@gmail.com" readOnly />
             </div>
-             <div className="mt-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Light Zones</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {isLoading ? (
-                             [...Array(6)].map((_, i) => <Skeleton key={i} className="h-32" />)
-                        ) : (
-                            lightZones.map((zone) => {
-                                const Icon = getIcon(zone.icon);
-                                const isChecked = zone.status.includes("On");
-                                const isAuto = zone.status.includes("Auto");
-                                return (
-                                <Card key={zone.id}>
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Icon className={`h-6 w-6 ${isChecked ? "text-yellow-400" : "text-muted-foreground"}`} />
-                                            <CardTitle className="text-base">{zone.name}</CardTitle>
-                                        </div>
-                                        <Switch 
-                                            checked={isChecked} 
-                                            onCheckedChange={() => handleToggle(zone.id, zone.status)}
-                                            disabled={isAuto}
-                                            aria-label={`Toggle ${zone.name}`}
-                                        />
-                                    </CardHeader>
-                                    <CardFooter>
-                                        <p className="text-xs text-muted-foreground">{zone.status}</p>
-                                    </CardFooter>
-                                </Card>
-                            )})
-                        )}
-                    </CardContent>
-                </Card>
+            <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                    <Input 
+                        id="password" 
+                        type={showPassword ? "text" : "password"}
+                        value="abcgn@542004"
+                        readOnly
+                        className="pr-10"
+                    />
+                     <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute inset-y-0 right-0 h-full px-3"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    </Button>
+                </div>
             </div>
-        </div>
-
-         <div>
-            <h2 className="text-xl font-bold font-headline mb-4">Smart Parking System</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <Car className="h-6 w-6" /> My Parking Slot
-                        </CardTitle>
-                        <CardDescription>
-                            Your allotted parking slot status.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-4xl font-bold">A-101</p>
-                        <div className="flex items-center gap-2 text-green-500 mt-2">
-                            <CheckCircle className="h-5 w-5" />
-                            <p className="font-semibold">Vehicle Present</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <ShieldCheck className="h-6 w-6" /> Guest Parking
-                        </CardTitle>
-                        <CardDescription>
-                            Register a guest's vehicle for temporary parking access.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Button className="w-full" onClick={handleRegisterGuest}>
-                           Register Guest Vehicle
-                       </Button>
-                    </CardContent>
-                </Card>
+             <Button className="w-full" disabled>
+                Login (Use Mobile App)
+             </Button>
+          </CardContent>
+        </Card>
+        
+        <Card className="md:col-span-1">
+           <CardHeader>
+            <CardTitle>How to Get Started</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+                <h4 className="font-semibold">1. Download the App</h4>
+                <p className="text-sm text-muted-foreground">
+                    Click the link below to download the Blynk IoT app from the Google Play Store.
+                </p>
             </div>
-        </div>
+            <div className="space-y-1">
+                <h4 className="font-semibold">2. Log In</h4>
+                <p className="text-sm text-muted-foreground">
+                    Open the app and log in using the email and password provided on the left.
+                </p>
+            </div>
+             <div className="space-y-1">
+                <h4 className="font-semibold">3. Control Your Devices</h4>
+                <p className="text-sm text-muted-foreground">
+                    Once logged in, you will see your dashboard and can start controlling your smart home devices.
+                </p>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button asChild className="w-full">
+              <Link href="https://play.google.com/store/apps/details?id=cloud.blynk" target="_blank" rel="noopener noreferrer">
+                <Download className="mr-2 h-4 w-4" />
+                Download Blynk App
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </>
   );
