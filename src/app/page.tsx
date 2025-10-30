@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { firebaseConfig } from '@/lib/firebase';
 
 export default function LoginPage() {
   const { auth, isLoading: isAuthLoading } = useFirebase();
@@ -29,7 +30,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | React.ReactNode>('');
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +85,16 @@ export default function LoginPage() {
     } catch (authError: any) {
       console.error("Authentication Error:", authError.code, authError.message);
       if (authError.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your internet connection or ensure your app\'s domain is authorized in the Firebase console under Authentication > Settings > Authorized domains.');
+        const projectId = firebaseConfig.projectId;
+        const authDomainUrl = `https://console.firebase.google.com/project/${projectId}/authentication/settings`;
+        setError(
+            <span>
+                Network error. Please check your internet connection or ensure your app's domain is authorized. 
+                <a href={authDomainUrl} target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                    Click here to check your Firebase project's authorized domains.
+                </a>
+            </span>
+        );
       } else if (!error) { // Avoid overwriting more specific errors
         setError(authError.message);
       }
@@ -199,3 +209,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
