@@ -57,11 +57,6 @@ export const initialEvents = [
         title: "Annual General Meeting",
         date: "Dec 5th, 2024 at 6:00 PM",
         location: "Clubhouse"
-    },
-    {
-        title: "Christmas Carnival",
-        date: "Dec 24th, 2024 from 3:00 PM",
-        location: "Society Park"
     }
 ];
 

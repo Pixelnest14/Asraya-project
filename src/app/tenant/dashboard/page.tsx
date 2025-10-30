@@ -174,7 +174,6 @@ export default function TenantDashboard() {
                             <h4 className="font-semibold">{event.title}</h4>
                             <p className="text-sm text-muted-foreground">{event.date} - {event.location}</p>
                         </div>
-                        <Button variant="outline">RSVP</Button>
                     </div>
                 ))
             ) : (
