@@ -20,6 +20,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Voting", href: "/admin/voting", icon: "Vote" },
   { label: "Emergency Alerts", href: "/admin/emergency-alert", icon: "Siren" },
   { label: "Marketplace", href: "/admin/marketplace", icon: "ShoppingCart" },
+  { label: "Smart Home", href: "/admin/smart-home", icon: "Home" },
 ];
 
 export const tenantNavItems: NavItem[] = [
@@ -35,3 +36,4 @@ export const tenantNavItems: NavItem[] = [
   { label: "AI Assistant", href: "/tenant/chatbot", icon: "Bot" },
   { label: "Smart Home", href: "/tenant/smart-home", icon: "Home" },
 ];
+
