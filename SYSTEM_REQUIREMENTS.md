@@ -24,6 +24,7 @@ This section describes the specific functions and features the system must provi
 -   **Notice Board:** Create, publish, and delete society-wide announcements that are instantly visible to all tenants.
 -   **Voting System:** Create and manage community polls, monitor voting progress with real-time results, and close polls.
 -   **Emergency Alert System:** Broadcast high-priority emergency messages to all residents instantly.
+-   **Smart Home Control:** Access a dedicated page with credentials to log into the Blynk app for managing society-wide smart devices.
 
 #### **Tenant-Specific Functions:**
 -   **Dashboard:** View a personalized summary of outstanding bills, active complaints, and the latest society announcements.
@@ -34,7 +35,7 @@ This section describes the specific functions and features the system must provi
 -   **Vehicle Registration:** Register personal vehicles to be linked with the society's parking system.
 -   **Voting:** Participate in active community polls and view the results after voting or after the poll has closed.
 -   **AI Assistant:** Interact with a chatbot to get instant answers to questions about society rules, services, and events.
--   **Emergency Alerts:** Receive and view high-priority alerts broadcast by the admin.
+-   **Smart Home Access:** Access a dedicated page with credentials and a download link for the Blynk mobile app to control personal smart home devices.
 
 ### 4.2 Non-Functional Requirements
 
