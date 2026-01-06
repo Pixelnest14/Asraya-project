@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, setDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, setDoc, doc, query, where } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -50,28 +50,42 @@ export default function AmenitiesPage() {
 
   useEffect(() => {
     if (!db) return;
+    
     const fetchAmenities = async () => {
       setIsLoading(true);
       const amenitiesCollection = collection(db, "amenities");
+
+      // Set up the initial data if it doesn't exist
       try {
-        const snapshot = await getDocs(amenitiesCollection);
-        if (snapshot.empty) {
-          for (const amenity of amenitiesData) {
-            await addDoc(amenitiesCollection, amenity);
-          }
-           const newSnapshot = await getDocs(amenitiesCollection);
-           const amenitiesList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-           setAmenities(amenitiesList);
-        } else {
-            const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-            setAmenities(amenitiesList);
+        for (const amenityData of amenitiesData) {
+            const q = query(amenitiesCollection, where("name", "==", amenityData.name));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+                await addDoc(amenitiesCollection, amenityData);
+            }
         }
       } catch (error) {
-          console.error("Error fetching amenities:", error);
+        console.error("Error setting up amenities:", error);
       }
-      setIsLoading(false);
+
+      // Fetch and listen for real-time updates
+      const unsubscribe = onSnapshot(amenitiesCollection, (snapshot) => {
+        const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+        setAmenities(amenitiesList);
+        setIsLoading(false);
+      }, (error) => {
+          console.error("Error fetching amenities:", error);
+          setIsLoading(false);
+      });
+
+      return unsubscribe;
     };
-    fetchAmenities();
+    
+    const unsubscribePromise = fetchAmenities();
+
+    return () => {
+        unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
+    };
   }, [db]);
 
 
