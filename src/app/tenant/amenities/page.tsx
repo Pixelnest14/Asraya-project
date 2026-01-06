@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, setDoc, doc, query, where } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, setDoc, doc, query, where, onSnapshot } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -57,10 +57,9 @@ export default function AmenitiesPage() {
 
       // Set up the initial data if it doesn't exist
       try {
-        for (const amenityData of amenitiesData) {
-            const q = query(amenitiesCollection, where("name", "==", amenityData.name));
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) {
+        const snapshot = await getDocs(amenitiesCollection);
+        if (snapshot.empty) {
+            for (const amenityData of amenitiesData) {
                 await addDoc(amenitiesCollection, amenityData);
             }
         }
