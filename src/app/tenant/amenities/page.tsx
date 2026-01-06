@@ -20,18 +20,18 @@ type Amenity = {
 };
 
 const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
-  {
-    name: "Play Court",
-    description: "Indoor court for various sports like table tennis or badminton."
-  },
-  {
-    name: "Swimming Pool",
-    description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
-  },
-  {
-    name: "Party Hall",
-    description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
-  }
+    {
+      name: "Play Court",
+      description: "A well-maintained indoor badminton court. Rackets and shuttles available."
+    },
+    {
+      name: "Swimming Pool",
+      description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
+    },
+    {
+      name: "Party Hall",
+      description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
+    }
 ];
 
 
