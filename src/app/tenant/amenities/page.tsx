@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot, query } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -21,8 +21,8 @@ type Amenity = {
 
 const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
   {
-    name: "Badminton Court",
-    description: "A well-maintained indoor badminton court. Rackets and shuttles available."
+    name: "Table Tennis",
+    description: "Indoor table tennis facilities. Bats and balls are available for use."
   },
   {
     name: "Swimming Pool",
@@ -53,7 +53,7 @@ export default function AmenitiesPage() {
 
     const amenitiesCollection = collection(db, "amenities");
 
-    const unsubscribe = onSnapshot(query(amenitiesCollection), async (snapshot) => {
+    const unsubscribe = onSnapshot(amenitiesCollection, async (snapshot) => {
         if (snapshot.empty) {
             // If the collection is empty, seed the initial data.
             setIsLoading(true);
