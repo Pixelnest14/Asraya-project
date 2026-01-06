@@ -10,14 +10,15 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 
 const ResidentQueryChatbotInputSchema = z.object({
-  query: z.string().describe('The tenant\'s question or query.'),
+  query: z.string().describe("The tenant's question or query."),
 });
 export type ResidentQueryChatbotInput = z.infer<typeof ResidentQueryChatbotInputSchema>;
 
 const ResidentQueryChatbotOutputSchema = z.object({
-  answer: z.string().describe('The chatbot\'s answer to the tenant\'s query.'),
+  answer: z.string().describe("The chatbot's answer to the tenant's query."),
 });
 export type ResidentQueryChatbotOutput = z.infer<typeof ResidentQueryChatbotOutputSchema>;
 
@@ -49,7 +50,13 @@ const residentQueryChatbotFlow = ai.defineFlow(
     outputSchema: ResidentQueryChatbotOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await ai.generate({
+      model: googleAI.model('gemini-1.5-flash-latest'),
+      prompt: prompt.render({input})[0].text!,
+      output: {
+        schema: ResidentQueryChatbotOutputSchema,
+      },
+    });
     return output!;
   }
 );
