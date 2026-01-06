@@ -86,13 +86,14 @@ export default function AdminMarketplacePage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {[...Array(4)].map((_, i) => (
                         <Card key={i}>
-                            <Skeleton className="h-48 w-full" />
-                            <CardContent className="p-4 space-y-2">
+                            <CardHeader>
                                 <Skeleton className="h-6 w-3/4" />
                                 <Skeleton className="h-4 w-full" />
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-2">
+                                <Skeleton className="h-8 w-20" />
                             </CardContent>
                             <CardFooter className="p-4 flex justify-between">
-                                <Skeleton className="h-8 w-20" />
                                 <Skeleton className="h-8 w-20" />
                             </CardFooter>
                         </Card>
@@ -102,19 +103,12 @@ export default function AdminMarketplacePage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {items.map((item) => (
                         <Card key={item.id} className="flex flex-col">
-                            <CardHeader className="p-0">
-                               <Image
-                                    src={item.image}
-                                    alt={item.title}
-                                    width={600}
-                                    height={400}
-                                    data-ai-hint={item.dataAiHint}
-                                    className="object-cover rounded-t-lg aspect-video"
-                                />
-                            </CardHeader>
-                            <CardContent className="p-4 flex-grow">
+                           <CardHeader>
                                  <CardTitle className="text-lg font-headline mb-1">{item.title}</CardTitle>
                                  <CardDescription className="text-sm">{item.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 flex-grow">
+                                {/* Intentionally left blank */}
                             </CardContent>
                             <CardFooter className="p-4 flex justify-between items-center">
                                 <div>

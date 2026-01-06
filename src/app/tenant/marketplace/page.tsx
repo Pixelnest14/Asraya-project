@@ -191,19 +191,12 @@ export default function TenantMarketplacePage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {items.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                            <CardHeader className="p-0">
-                               <Image
-                                    src={item.image}
-                                    alt={item.title}
-                                    width={600}
-                                    height={400}
-                                    data-ai-hint={item.dataAiHint}
-                                    className="object-cover rounded-t-lg aspect-video"
-                                />
+                            <CardHeader>
+                                <CardTitle className="text-lg font-headline mb-1">{item.title}</CardTitle>
+                                <CardDescription className="text-sm">{item.description}</CardDescription>
                             </CardHeader>
-                            <CardContent className="p-4 flex-grow">
-                                 <CardTitle className="text-lg font-headline mb-1">{item.title}</CardTitle>
-                                 <CardDescription className="text-sm">{item.description}</CardDescription>
+                            <CardContent className="flex-grow">
+                                {/* Intentionally left blank */}
                             </CardContent>
                             <CardFooter className="p-4 flex justify-between items-center bg-muted/50">
                                 <div>
