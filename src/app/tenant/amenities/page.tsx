@@ -21,20 +21,20 @@ type Amenity = {
 
 const amenitiesData: Omit<Amenity, 'id'>[] = [
   {
-    name: "Swimming Pool",
-    description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
-  },
-  {
-    name: "Party Hall",
-    description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
-  },
-  {
     name: "Badminton Court",
     description: "A well-maintained indoor badminton court. Rackets and shuttles available."
   },
   {
+    name: "Swimming Pool",
+    description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
+  },
+  {
     name: "Gym",
     description: "Fully equipped gymnasium with modern equipment for all your fitness needs."
+  },
+  {
+    name: "Party Hall",
+    description: "A spacious hall for hosting parties and events. Can accommodate up to 100 guests."
   }
 ];
 
@@ -57,8 +57,7 @@ export default function AmenitiesPage() {
         const snapshot = await getDocs(amenitiesCollection);
         if (snapshot.empty) {
           for (const amenity of amenitiesData) {
-            const docRef = doc(amenitiesCollection);
-            await setDoc(docRef, { ...amenity, id: docRef.id });
+            await addDoc(amenitiesCollection, amenity);
           }
            const newSnapshot = await getDocs(amenitiesCollection);
            const amenitiesList = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
