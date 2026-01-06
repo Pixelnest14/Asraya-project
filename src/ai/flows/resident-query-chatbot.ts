@@ -29,7 +29,6 @@ const prompt = ai.definePrompt({
   name: 'residentQueryChatbotPrompt',
   input: {schema: ResidentQueryChatbotInputSchema},
   output: {schema: ResidentQueryChatbotOutputSchema},
-  model: 'googleai/gemini-2.5-flash',
   prompt: `You are a helpful AI assistant for residents of the Asraya Society Hub.
   Your purpose is to answer questions about society rules, services, and events.
   Use the following information to answer the resident\'s query:
