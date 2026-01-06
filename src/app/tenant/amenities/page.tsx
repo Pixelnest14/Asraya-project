@@ -55,13 +55,12 @@ export default function AmenitiesPage() {
             const snapshot = await getDocs(amenitiesCollection);
             if (snapshot.empty) {
                 // Collection is empty, seed the data
-                const seededAmenities: Amenity[] = [];
                 for (const amenityData of amenitiesToSeed) {
-                    const docRef = await addDoc(amenitiesCollection, amenityData);
-                    seededAmenities.push({ id: docRef.id, ...amenityData });
+                    await addDoc(amenitiesCollection, amenityData);
                 }
-                // Immediately set state from local seed data
-                setAmenities(seededAmenities);
+                // After seeding, set state from the local array to avoid race conditions
+                const seededDataWithIds = amenitiesToSeed.map((amenity, index) => ({ id: `seeded-${index}`, ...amenity}));
+                setAmenities(seededDataWithIds);
             } else {
                 // Collection is not empty, set state from fetched data
                 const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
