@@ -53,11 +53,16 @@ export default function AmenitiesPage() {
         if (snapshot.empty) {
             setIsLoading(true);
             try {
+                const newAmenities: Amenity[] = [];
                 for (const amenityData of amenitiesToSeed) {
-                    await addDoc(amenitiesCollection, amenityData);
+                    const docRef = await addDoc(amenitiesCollection, amenityData);
+                    newAmenities.push({ id: docRef.id, ...amenityData });
                 }
+                // Immediately update state after seeding to prevent UI flicker
+                setAmenities(newAmenities);
             } catch (error) {
                 console.error("Error seeding amenities:", error);
+            } finally {
                 setIsLoading(false);
             }
         } else {
@@ -127,7 +132,7 @@ export default function AmenitiesPage() {
       />
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
                 <Card key={i}>
                     <CardHeader>
                         <Skeleton className="h-6 w-1/2 mb-2" />
