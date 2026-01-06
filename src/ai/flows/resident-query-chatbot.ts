@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,7 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
 
 const ResidentQueryChatbotInputSchema = z.object({
   query: z.string().describe("The tenant's question or query."),
@@ -50,13 +50,8 @@ const residentQueryChatbotFlow = ai.defineFlow(
     outputSchema: ResidentQueryChatbotOutputSchema,
   },
   async input => {
-    const {output} = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash-latest'),
-      prompt: prompt.render({input})[0].text!,
-      output: {
-        schema: ResidentQueryChatbotOutputSchema,
-      },
-    });
+    const {output} = await prompt(input);
     return output!;
   }
 );
+
