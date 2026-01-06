@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, setDoc, doc, query, where, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot, query } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,7 +19,7 @@ type Amenity = {
   description: string;
 };
 
-const amenitiesData: Omit<Amenity, 'id'>[] = [
+const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
   {
     name: "Badminton Court",
     description: "A well-maintained indoor badminton court. Rackets and shuttles available."
@@ -50,41 +50,34 @@ export default function AmenitiesPage() {
 
   useEffect(() => {
     if (!db) return;
-    
-    const fetchAmenities = async () => {
-      setIsLoading(true);
-      const amenitiesCollection = collection(db, "amenities");
 
-      // Set up the initial data if it doesn't exist
-      try {
-        const snapshot = await getDocs(amenitiesCollection);
+    const amenitiesCollection = collection(db, "amenities");
+
+    const unsubscribe = onSnapshot(query(amenitiesCollection), async (snapshot) => {
         if (snapshot.empty) {
-            for (const amenityData of amenitiesData) {
-                await addDoc(amenitiesCollection, amenityData);
+            // If the collection is empty, seed the initial data.
+            setIsLoading(true);
+            try {
+                for (const amenityData of amenitiesToSeed) {
+                    await addDoc(amenitiesCollection, amenityData);
+                }
+                // The onSnapshot listener will then pick up the newly added docs.
+            } catch (error) {
+                console.error("Error seeding amenities:", error);
+                setIsLoading(false);
             }
+        } else {
+            // If docs exist, map them to state.
+            const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+            setAmenities(amenitiesList);
+            setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error setting up amenities:", error);
-      }
-
-      // Fetch and listen for real-time updates
-      const unsubscribe = onSnapshot(amenitiesCollection, (snapshot) => {
-        const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-        setAmenities(amenitiesList);
+    }, (error) => {
+        console.error("Error fetching amenities:", error);
         setIsLoading(false);
-      }, (error) => {
-          console.error("Error fetching amenities:", error);
-          setIsLoading(false);
-      });
+    });
 
-      return unsubscribe;
-    };
-    
-    const unsubscribePromise = fetchAmenities();
-
-    return () => {
-        unsubscribePromise.then(unsubscribe => unsubscribe && unsubscribe());
-    };
+    return () => unsubscribe();
   }, [db]);
 
 
