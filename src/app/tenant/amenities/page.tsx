@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, doc } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -47,36 +47,37 @@ export default function AmenitiesPage() {
   useEffect(() => {
     if (!db) return;
 
-    const amenitiesCollection = collection(db, "amenities");
-
-    const unsubscribe = onSnapshot(amenitiesCollection, async (snapshot) => {
-        if (snapshot.empty) {
-            setIsLoading(true);
-            try {
-                const newAmenities: Amenity[] = [];
+    const fetchAndSeedAmenities = async () => {
+        setIsLoading(true);
+        const amenitiesCollection = collection(db, "amenities");
+        
+        try {
+            const snapshot = await getDocs(amenitiesCollection);
+            if (snapshot.empty) {
+                // Collection is empty, seed the data
+                const seededAmenities: Amenity[] = [];
                 for (const amenityData of amenitiesToSeed) {
                     const docRef = await addDoc(amenitiesCollection, amenityData);
-                    newAmenities.push({ id: docRef.id, ...amenityData });
+                    seededAmenities.push({ id: docRef.id, ...amenityData });
                 }
-                // Immediately update state after seeding to prevent UI flicker
-                setAmenities(newAmenities);
-            } catch (error) {
-                console.error("Error seeding amenities:", error);
-            } finally {
-                setIsLoading(false);
+                // Immediately set state from local seed data
+                setAmenities(seededAmenities);
+            } else {
+                // Collection is not empty, set state from fetched data
+                const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+                setAmenities(amenitiesList);
             }
-        } else {
-            const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-            setAmenities(amenitiesList);
+        } catch (error) {
+            console.error("Error fetching or seeding amenities:", error);
+            toast({ title: "Error", description: "Could not load amenities.", variant: "destructive" });
+        } finally {
             setIsLoading(false);
         }
-    }, (error) => {
-        console.error("Error fetching amenities:", error);
-        setIsLoading(false);
-    });
+    };
+    
+    fetchAndSeedAmenities();
 
-    return () => unsubscribe();
-  }, [db]);
+  }, [db, toast]);
 
 
   const handleBooking = (amenity: Amenity) => {
