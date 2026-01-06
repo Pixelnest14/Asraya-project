@@ -55,19 +55,16 @@ export default function AmenitiesPage() {
 
     const unsubscribe = onSnapshot(amenitiesCollection, async (snapshot) => {
         if (snapshot.empty) {
-            // If the collection is empty, seed the initial data.
             setIsLoading(true);
             try {
                 for (const amenityData of amenitiesToSeed) {
                     await addDoc(amenitiesCollection, amenityData);
                 }
-                // The onSnapshot listener will then pick up the newly added docs.
             } catch (error) {
                 console.error("Error seeding amenities:", error);
                 setIsLoading(false);
             }
         } else {
-            // If docs exist, map them to state.
             const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
             setAmenities(amenitiesList);
             setIsLoading(false);
