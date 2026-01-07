@@ -7,20 +7,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Car, PlusCircle } from "lucide-react";
+import { Car } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useFirebase } from "@/components/firebase-provider";
 import { useToast } from "@/hooks/use-toast";
-import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { collection, onSnapshot, doc, getDoc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type ParkingSlot = {
   id: string;
   status: 'Available' | 'Allotted' | 'Occupied';
   allottedTo: string | null;
+};
+
+type Vehicle = {
+    id: string;
+    number: string;
+    type: string;
+    flat: string;
 };
 
 export default function ParkingPage() {
@@ -31,7 +36,7 @@ export default function ParkingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<ParkingSlot | null>(null);
-  const [flatNumber, setFlatNumber] = useState("");
+  const [tenantVehicles, setTenantVehicles] = useState<Vehicle[]>([]);
 
   useEffect(() => {
     if (!db || isAuthLoading) return;
@@ -72,41 +77,35 @@ export default function ParkingPage() {
     };
   }, [db, isAuthLoading]);
 
-  const handleAllotClick = (slot: ParkingSlot) => {
+  const handleViewDetails = async (slot: ParkingSlot) => {
+    if (!db || !slot.allottedTo) {
+        toast({ title: "No tenant assigned to this slot.", variant: "destructive" });
+        return;
+    }
     setSelectedSlot(slot);
-    setFlatNumber("");
     setIsDialogOpen(true);
+
+    try {
+        const vehiclesQuery = query(collection(db, "vehicles"), where("flat", "==", slot.allottedTo));
+        const querySnapshot = await getDocs(vehiclesQuery);
+        const vehicles = querySnapshot.docs.map(doc => doc.data() as Vehicle);
+        setTenantVehicles(vehicles);
+    } catch (error) {
+        console.error("Error fetching tenant vehicles:", error);
+        toast({ title: "Could not fetch vehicle details.", variant: "destructive" });
+        setTenantVehicles([]);
+    }
   };
   
-  const handleConfirmAllotment = async () => {
-    if (!db || !selectedSlot || !flatNumber.trim()) {
-      toast({ title: "Please enter a flat number.", variant: "destructive" });
-      return;
-    }
-    
-    try {
-      const slotRef = doc(db, "parkingSlots", selectedSlot.id);
-      await updateDoc(slotRef, {
-        status: "Allotted",
-        allottedTo: flatNumber.trim().toUpperCase()
-      });
-      toast({ title: "Slot Allotted!", description: `Parking slot ${selectedSlot.id} has been allotted to ${flatNumber}.` });
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Error allotting slot:", error);
-      toast({ title: "Failed to allot slot.", variant: "destructive" });
-    }
-  };
-
   const getStatusInfo = (slot: ParkingSlot) => {
     switch (slot.status) {
       case 'Available':
         return {
-          cardClass: 'bg-green-900/30 border-green-500/50',
+          cardClass: 'bg-green-900/30 border-green-500/50 opacity-70',
           iconClass: 'text-green-400',
           badgeVariant: 'secondary',
           badgeText: 'Available',
-          button: <Button onClick={() => handleAllotClick(slot)}><PlusCircle /> Allot</Button>,
+          button: <Button disabled variant="secondary">Available</Button>,
         };
       case 'Allotted':
       case 'Occupied':
@@ -114,8 +113,8 @@ export default function ParkingPage() {
           cardClass: 'bg-muted/50',
           iconClass: slot.status === 'Occupied' ? 'text-yellow-400' : 'text-primary',
           badgeVariant: 'outline',
-          badgeText: 'Allotted',
-          button: <Button variant="outline">Details</Button>,
+          badgeText: slot.status,
+          button: <Button variant="outline" onClick={() => handleViewDetails(slot)}>Details</Button>,
         };
       default:
         return {
@@ -123,7 +122,7 @@ export default function ParkingPage() {
           iconClass: '',
           badgeVariant: 'outline',
           badgeText: 'N/A',
-          button: <Button variant="outline">Details</Button>,
+          button: <Button variant="outline" disabled>Details</Button>,
         };
     }
   };
@@ -222,26 +221,23 @@ export default function ParkingPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Allot Parking Slot {selectedSlot?.id}</DialogTitle>
+            <DialogTitle>Vehicle Details for Slot {selectedSlot?.id}</DialogTitle>
             <DialogDescription>
-              Assign this parking slot to a resident by entering their flat number.
+              Vehicles registered to flat {selectedSlot?.allottedTo}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="flat-number">Flat Number</Label>
-              <Input 
-                id="flat-number" 
-                placeholder="e.g., A-101" 
-                value={flatNumber}
-                onChange={(e) => setFlatNumber(e.target.value)}
-              />
-            </div>
+            {tenantVehicles.length > 0 ? (
+                tenantVehicles.map(vehicle => (
+                    <div key={vehicle.id} className="p-3 border rounded-md bg-muted/50">
+                        <p><strong>Number:</strong> <span className="font-mono">{vehicle.number}</span></p>
+                        <p><strong>Type:</strong> {vehicle.type}</p>
+                    </div>
+                ))
+            ) : (
+                <p className="text-muted-foreground">No vehicles found registered for this flat.</p>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleConfirmAllotment}>Confirm Allotment</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

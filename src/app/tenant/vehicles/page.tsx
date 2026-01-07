@@ -19,6 +19,7 @@ type Vehicle = {
   id: string;
   number: string;
   type: string;
+  flat: string;
   userId?: string;
 };
 
@@ -31,6 +32,7 @@ export default function VehiclesPage() {
   
   const [vehicleType, setVehicleType] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
+  const [flatNumber, setFlatNumber] = useState("");
 
   useEffect(() => {
     if (!db || isAuthLoading) return;
@@ -61,10 +63,10 @@ export default function VehiclesPage() {
   }, [db, user, isAuthLoading, toast]);
 
   const handleRegisterVehicle = async () => {
-    if (!vehicleType || !vehicleNumber) {
+    if (!vehicleType || !vehicleNumber || !flatNumber) {
       toast({
         title: "Missing Information",
-        description: "Please select a vehicle type and enter a number.",
+        description: "Please fill out all vehicle and flat details.",
         variant: "destructive",
       });
       return;
@@ -78,6 +80,7 @@ export default function VehiclesPage() {
       await addDoc(collection(db, "vehicles"), {
         type: vehicleType,
         number: vehicleNumber,
+        flat: flatNumber.toUpperCase(),
         userId: user ? user.uid : "anonymous",
         createdAt: Timestamp.now(),
       });
@@ -87,6 +90,7 @@ export default function VehiclesPage() {
       });
       setVehicleNumber("");
       setVehicleType("");
+      setFlatNumber("");
     } catch (error) {
       console.error("Error adding vehicle:", error);
       toast({
@@ -147,7 +151,16 @@ export default function VehiclesPage() {
                         id="vehicle-number" 
                         placeholder="e.g., KA14AB1234"
                         value={vehicleNumber}
-                        onChange={(e) => setVehicleNumber(e.target.value)}
+                        onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="flat-number">Flat Number</Label>
+                    <Input 
+                        id="flat-number" 
+                        placeholder="e.g., A-101"
+                        value={flatNumber}
+                        onChange={(e) => setFlatNumber(e.target.value.toUpperCase())}
                     />
                 </div>
                 <Button onClick={handleRegisterVehicle}>
@@ -167,13 +180,14 @@ export default function VehiclesPage() {
                         <TableRow>
                             <TableHead>Vehicle Number</TableHead>
                             <TableHead>Type</TableHead>
+                            <TableHead>Flat</TableHead>
                             <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
+                                <TableCell colSpan={4} className="h-24 text-center">
                                     <Skeleton className="w-full h-8" />
                                 </TableCell>
                             </TableRow>
@@ -182,6 +196,7 @@ export default function VehiclesPage() {
                                 <TableRow key={vehicle.id}>
                                     <TableCell className="font-mono">{vehicle.number}</TableCell>
                                     <TableCell>{vehicle.type}</TableCell>
+                                    <TableCell>{vehicle.flat}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDeleteVehicle(vehicle.id)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -191,7 +206,7 @@ export default function VehiclesPage() {
                             ))
                         ) : (
                              <TableRow>
-                                <TableCell colSpan={3} className="text-center">
+                                <TableCell colSpan={4} className="text-center">
                                     You have not registered any vehicles.
                                 </TableCell>
                             </TableRow>
