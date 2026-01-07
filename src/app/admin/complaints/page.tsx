@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, Timestamp, getDocs, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, Timestamp, getDocs, addDoc, doc, deleteDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 
 type Complaint = {
   id: string;
@@ -42,6 +44,7 @@ const createSampleComplaint = async (db) => {
 
 export default function AdminComplaintsPage() {
   const { db } = useFirebase();
+  const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -108,6 +111,21 @@ export default function AdminComplaintsPage() {
   const handleViewDetails = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteComplaint = async () => {
+    if (!db || !selectedComplaint) return;
+    if (confirm("Are you sure you want to delete this complaint? This action cannot be undone.")) {
+      try {
+        await deleteDoc(doc(db, "complaints", selectedComplaint.id));
+        toast({ title: "Complaint Deleted", description: "The complaint has been removed." });
+        setIsDialogOpen(false);
+        setSelectedComplaint(null);
+      } catch (error) {
+        console.error("Error deleting complaint: ", error);
+        toast({ title: "Error", description: "Could not delete the complaint.", variant: "destructive" });
+      }
+    }
   };
 
   return (
@@ -205,9 +223,15 @@ export default function AdminComplaintsPage() {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
-            <Button>Update Status</Button>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="destructive" onClick={handleDeleteComplaint}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+            </Button>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
+                <Button>Update Status</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
