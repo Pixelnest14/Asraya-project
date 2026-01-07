@@ -27,7 +27,6 @@ type Complaint = {
 
 const createSampleComplaint = async (db) => {
   try {
-    console.log("Creating sample complaint...");
     await addDoc(collection(db, "complaints"), {
       category: "Plumbing",
       description: "This is a sample complaint. The faucet in the common area washroom is leaking constantly.",
@@ -36,7 +35,6 @@ const createSampleComplaint = async (db) => {
       userId: "sample-user-id",
       userFlat: "A-101"
     });
-    console.log("Sample complaint created.");
   } catch (error) {
     console.error("Error creating sample complaint: ", error);
   }
