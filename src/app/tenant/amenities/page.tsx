@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot, query, where } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,6 +18,11 @@ type Amenity = {
   name: string;
   description: string;
 };
+
+type Booking = {
+    amenityId: string;
+    bookingDate: Timestamp;
+}
 
 const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
     {
@@ -47,6 +52,7 @@ export default function AmenitiesPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
   const { db, user } = useFirebase();
+  const [bookedDates, setBookedDates] = useState<Date[]>([]);
 
   useEffect(() => {
     if (!db) return;
@@ -92,9 +98,26 @@ export default function AmenitiesPage() {
 
   }, [db, toast]);
 
+  useEffect(() => {
+    if (!db || !selectedAmenity) return;
+
+    const bookingsQuery = query(
+        collection(db, "bookings"),
+        where("amenityId", "==", selectedAmenity.id)
+    );
+
+    const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
+        const dates = snapshot.docs.map(doc => (doc.data() as Booking).bookingDate.toDate());
+        setBookedDates(dates);
+    });
+
+    return () => unsubscribe();
+  }, [db, selectedAmenity]);
+
 
   const handleBooking = (amenity: Amenity) => {
     setSelectedAmenity(amenity);
+    setSelectedDate(undefined); // Reset date on new dialog open
     setOpen(true);
   };
 
@@ -137,6 +160,8 @@ export default function AmenitiesPage() {
     
     setOpen(false);
   }
+  
+  const bookedStyle = { backgroundColor: 'lightyellow' };
 
   return (
     <>
@@ -187,7 +212,7 @@ export default function AmenitiesPage() {
           <DialogHeader>
             <DialogTitle>Book {selectedAmenity?.name}</DialogTitle>
             <DialogDescription>
-              Select a date to book this amenity.
+              Select a date to book this amenity. Booked dates are highlighted.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center">
@@ -196,7 +221,16 @@ export default function AmenitiesPage() {
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 className="rounded-md border"
-                disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                disabled={(date) =>
+                    date < new Date(new Date().setDate(new Date().getDate() - 1)) ||
+                    bookedDates.some(bookedDate => 
+                        bookedDate.getFullYear() === date.getFullYear() &&
+                        bookedDate.getMonth() === date.getMonth() &&
+                        bookedDate.getDate() === date.getDate()
+                    )
+                }
+                modifiers={{ booked: bookedDates }}
+                modifiersStyles={{ booked: bookedStyle }}
               />
           </div>
           <DialogFooter>
