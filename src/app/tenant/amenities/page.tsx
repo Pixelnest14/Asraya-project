@@ -21,7 +21,7 @@ type Amenity = {
 
 const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
     {
-      name: "Play Court",
+      name: "Badminton Court",
       description: "A well-maintained indoor badminton court. Rackets and shuttles available."
     },
     {
@@ -55,12 +55,12 @@ export default function AmenitiesPage() {
             const snapshot = await getDocs(amenitiesCollection);
             if (snapshot.empty) {
                 // Collection is empty, seed the data
+                const seededData: Amenity[] = [];
                 for (const amenityData of amenitiesToSeed) {
-                    await addDoc(amenitiesCollection, amenityData);
+                    const docRef = await addDoc(amenitiesCollection, amenityData);
+                    seededData.push({ id: docRef.id, ...amenityData });
                 }
-                // After seeding, set state from the local array to avoid race conditions
-                const seededDataWithIds = amenitiesToSeed.map((amenity, index) => ({ id: `seeded-${index}`, ...amenity}));
-                setAmenities(seededDataWithIds);
+                setAmenities(seededData);
             } else {
                 // Collection is not empty, set state from fetched data
                 const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
