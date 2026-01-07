@@ -32,8 +32,8 @@ export const tenantNavItems: NavItem[] = [
   { label: "My Vehicles", href: "/tenant/vehicles", icon: "Car" },
   { label: "Voting", href: "/tenant/voting", icon: "Vote" },
   { label: "Marketplace", href: "/tenant/marketplace", icon: "ShoppingCart" },
+  { label: "Chat with Admin", href: "/tenant/chat", icon: "MessageSquare" },
   { label: "Emergency", href: "/tenant/emergency-alert", icon: "ShieldAlert" },
   { label: "AI Assistant", href: "/tenant/chatbot", icon: "Bot" },
   { label: "Smart Home", href: "/tenant/smart-home", icon: "Home" },
 ];
-
