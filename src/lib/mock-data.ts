@@ -56,7 +56,14 @@ export const initialEvents = [
     {
         title: "Annual General Meeting",
         date: "Dec 5th, 2024 at 6:00 PM",
-        location: "Clubhouse"
+        location: "Clubhouse",
+        createdAt: new Date("2024-12-05T18:00:00")
+    },
+    {
+        title: "Christmas Carnival",
+        date: "Dec 24th, 2024 from 3:00 PM",
+        location: "Society Park",
+        createdAt: new Date("2024-12-24T15:00:00")
     }
 ];
 
