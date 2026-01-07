@@ -67,9 +67,12 @@ export default function AdminDashboard() {
     });
 
     // Active Alerts Listener
-    const alertsQuery = query(collection(db, "emergencyAlerts"), where("active", "==", true), orderBy("timestamp", "desc"), limit(3));
+    const alertsQuery = query(collection(db, "emergencyAlerts"), where("active", "==", true), limit(3));
     const unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
-        setActiveAlerts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert)));
+        const alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
+        // Sort alerts by timestamp on the client side
+        alerts.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+        setActiveAlerts(alerts);
         setIsLoading(false);
     });
 
