@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, onSnapshot, Timestamp, getDocs, addDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, Timestamp, getDocs, addDoc, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,7 @@ export default function AdminComplaintsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!db) return;
@@ -109,6 +110,7 @@ export default function AdminComplaintsPage() {
   const handleViewDetails = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setIsDialogOpen(true);
+    setIsUpdatingStatus(false);
   };
 
   const handleDeleteComplaint = async () => {
@@ -123,6 +125,21 @@ export default function AdminComplaintsPage() {
         console.error("Error deleting complaint: ", error);
         toast({ title: "Error", description: "Could not delete the complaint.", variant: "destructive" });
       }
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: 'Resolved' | 'In Progress') => {
+    if (!db || !selectedComplaint) return;
+    try {
+        const complaintRef = doc(db, "complaints", selectedComplaint.id);
+        await updateDoc(complaintRef, { status: newStatus });
+        toast({ title: "Status Updated", description: `Complaint marked as ${newStatus}.` });
+        setIsDialogOpen(false);
+        setSelectedComplaint(null);
+        setIsUpdatingStatus(false);
+    } catch (error) {
+        console.error("Error updating status: ", error);
+        toast({ title: "Error", description: "Could not update status.", variant: "destructive" });
     }
   };
 
@@ -222,14 +239,26 @@ export default function AdminComplaintsPage() {
             </div>
           )}
           <DialogFooter className="sm:justify-between">
-            <Button variant="destructive" onClick={handleDeleteComplaint}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-            </Button>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
-                <Button>Update Status</Button>
-            </div>
+            {isUpdatingStatus ? (
+                <div className="w-full flex justify-between">
+                    <Button variant="outline" onClick={() => setIsUpdatingStatus(false)}>Cancel</Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => handleUpdateStatus('In Progress')}>Still working on it</Button>
+                        <Button variant="secondary" onClick={() => handleUpdateStatus('Resolved')}>Done</Button>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <Button variant="destructive" onClick={handleDeleteComplaint}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
+                        <Button onClick={() => setIsUpdatingStatus(true)}>Update Status</Button>
+                    </div>
+                </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
