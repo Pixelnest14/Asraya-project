@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Trash2 } from "lucide-react";
 import { useFirebase } from "@/components/firebase-provider";
-import { collection, addDoc, onSnapshot, doc, deleteDoc, query, where, Timestamp } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, doc, deleteDoc, query, where, Timestamp, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,6 +22,13 @@ type Vehicle = {
   flat: string;
   userId?: string;
 };
+
+// Sample vehicles to be seeded
+const sampleVehicles = [
+  { type: "Car", number: "KA 01 MR 1234", flat: "A-101", userId: "user-a-101" },
+  { type: "Car", number: "KA 22 DB 3456", flat: "A-102", userId: "user-a-102" },
+  { type: "Motorcycle", number: "KA 05 XY 9876", flat: "A-201", userId: "user-a-201" },
+];
 
 export default function VehiclesPage() {
   const { db, user, isLoading: isAuthLoading } = useFirebase();
@@ -38,28 +45,48 @@ export default function VehiclesPage() {
     if (!db || isAuthLoading) return;
     setIsLoading(true);
 
-    const q = user
-      ? query(collection(db, "vehicles"), where("userId", "==", user.uid))
-      : collection(db, "vehicles");
+    const setupAndFetchVehicles = async () => {
+        const vehiclesCollection = collection(db, "vehicles");
+        try {
+            const snapshot = await getDocs(vehiclesCollection);
+            if (snapshot.empty) {
+                for (const vehicle of sampleVehicles) {
+                    await addDoc(vehiclesCollection, {...vehicle, createdAt: Timestamp.now()});
+                }
+            }
+        } catch (error) {
+            console.error("Error seeding vehicles:", error);
+        }
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const vehiclesData: Vehicle[] = [];
-      querySnapshot.forEach((doc) => {
-        vehiclesData.push({ id: doc.id, ...doc.data() } as Vehicle);
-      });
-      setVehicles(vehiclesData);
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching vehicles:", error);
-      toast({
-        title: "Error",
-        description: "Could not fetch vehicle data.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-    });
+        const q = user
+          ? query(collection(db, "vehicles"), where("userId", "==", user.uid))
+          : vehiclesCollection;
 
-    return () => unsubscribe();
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const vehiclesData: Vehicle[] = [];
+          querySnapshot.forEach((doc) => {
+            vehiclesData.push({ id: doc.id, ...doc.data() } as Vehicle);
+          });
+          setVehicles(vehiclesData);
+          setIsLoading(false);
+        }, (error) => {
+          console.error("Error fetching vehicles:", error);
+          toast({
+            title: "Error",
+            description: "Could not fetch vehicle data.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+        });
+
+        return unsubscribe;
+    };
+
+    const unsubscribePromise = setupAndFetchVehicles();
+
+    return () => {
+      unsubscribePromise.then(unsub => unsub && unsub());
+    };
   }, [db, user, isAuthLoading, toast]);
 
   const handleRegisterVehicle = async () => {
@@ -149,7 +176,7 @@ export default function VehiclesPage() {
                     <Label htmlFor="vehicle-number">Vehicle Number</Label>
                     <Input 
                         id="vehicle-number" 
-                        placeholder="e.g., KA14AB1234"
+                        placeholder="e.g., KA01AB1234"
                         value={vehicleNumber}
                         onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
                     />
