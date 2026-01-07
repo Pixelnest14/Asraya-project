@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, Timestamp, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, doc, onSnapshot } from "firebase/firestore";
 import { useFirebase } from "@/components/firebase-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -27,6 +27,10 @@ const amenitiesToSeed: Omit<Amenity, 'id'>[] = [
     {
       name: "Swimming Pool",
       description: "A large, clean swimming pool for all residents. Open from 6 AM to 10 PM."
+    },
+    {
+      name: "Gym",
+      description: "Fully equipped gymnasium with modern equipment for all your fitness needs."
     },
     {
       name: "Party Hall",
@@ -47,34 +51,44 @@ export default function AmenitiesPage() {
   useEffect(() => {
     if (!db) return;
 
-    const fetchAndSeedAmenities = async () => {
+    const amenitiesCollection = collection(db, "amenities");
+
+    const setupAndFetchAmenities = async () => {
         setIsLoading(true);
-        const amenitiesCollection = collection(db, "amenities");
-        
         try {
             const snapshot = await getDocs(amenitiesCollection);
             if (snapshot.empty) {
                 // Collection is empty, seed the data
-                const seededData: Amenity[] = [];
                 for (const amenityData of amenitiesToSeed) {
-                    const docRef = await addDoc(amenitiesCollection, amenityData);
-                    seededData.push({ id: docRef.id, ...amenityData });
+                    await addDoc(amenitiesCollection, amenityData);
                 }
-                setAmenities(seededData);
-            } else {
-                // Collection is not empty, set state from fetched data
-                const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
-                setAmenities(amenitiesList);
             }
         } catch (error) {
-            console.error("Error fetching or seeding amenities:", error);
-            toast({ title: "Error", description: "Could not load amenities.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
+            console.error("Error checking or seeding amenities:", error);
+            toast({ title: "Error", description: "Could not initialize amenities.", variant: "destructive" });
         }
+
+        // Set up the real-time listener
+        const unsubscribe = onSnapshot(amenitiesCollection, (snapshot) => {
+            const amenitiesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amenity));
+            setAmenities(amenitiesList);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching amenities:", error);
+            toast({ title: "Error", description: "Could not load amenities.", variant: "destructive" });
+            setIsLoading(false);
+        });
+
+        return unsubscribe;
     };
     
-    fetchAndSeedAmenities();
+    const unsubscribePromise = setupAndFetchAmenities();
+
+    return () => {
+        unsubscribePromise.then(unsub => {
+            if (unsub) unsub();
+        });
+    };
 
   }, [db, toast]);
 
@@ -132,7 +146,7 @@ export default function AmenitiesPage() {
       />
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {[...Array(3)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
                 <Card key={i}>
                     <CardHeader>
                         <Skeleton className="h-6 w-1/2 mb-2" />
