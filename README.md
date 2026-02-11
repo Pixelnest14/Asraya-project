@@ -9,4 +9,11 @@ this is how the app looks like :
 <img width="2940" height="1462" alt="image" src="https://github.com/user-attachments/assets/939ae9c0-0359-410e-8b3b-668f05b91e48" />
 <img width="1470" height="731" alt="image" src="https://github.com/user-attachments/assets/9780ad44-a299-4cf1-ab3b-fa6d8d5a2f38" />
 
+project with iot 
+smart parking 
+smart water level detetion
+smart light system
+![asraya ](https://github.com/user-attachments/assets/675a1825-ae23-4ede-9f88-35e97d45d2c9)
+
+https://github.com/user-attachments/assets/79826b94-1192-4de6-bb14-d681eaa30a17
 
